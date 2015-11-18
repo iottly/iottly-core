@@ -46,21 +46,18 @@ CLIENT_CALLBACK_URL = 'http://iottlydocker_iottlyclientcore_1:8521/msg'
 # Filesystem binaries (FW/NN)
 FIRMWARE_DIR = '/var/iottly-core/uploads/fw/'
 
-SECRET_SALT = 'fj39Adkq49dKkxpw'
+SECRET_SALT = 'secrect'
 
 ADMINS = {
-  'dimaofman@gmail.com',
-  'stefano.terna@gmail.com',
-  'giancarlo.capella@gmail.com',
-  'raffaele.passannanti@gmail.com'
 }
+
 
 # Tornado specific settings, see http://www.tornadoweb.org/en/stable/web.html#tornado.web.Application.settings
 static_path = os.path.join("/iottly_console", "static")
 template_path = os.path.join("/iottly_console", "templates")
 debug = True
 
-cookie_secret = '/}Mt,GevcVNY8##`H}0^jH+6B+Goq|f1Y4|.P-2Bpvyl60zKY>gYQ4|XP_4k<(sM'
+cookie_secret = 'secret'
 login_url = '/auth'
 
 try:

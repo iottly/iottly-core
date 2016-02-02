@@ -50,6 +50,7 @@ from iottly_core import messageparser
 from iottly_core import flashmanager
 from iottly_core import permissions
 from iottly_core import boards
+from iottly_core import projectmanager
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -272,6 +273,24 @@ class MessageHandler(BaseHandler):
                 fn(msg)
 
 
+
+class ProjectHandler(BaseHandler):
+
+
+    #@tornado.web.authenticated
+    #@permissions.admin_only
+    @gen.coroutine
+    def post(self):
+        project = self.get_argument('project', None)
+        logging.info(project)
+        project = ujson.loads(project)
+        project = projectmanager.Project(project)
+
+        #set here logic to address issues 3 to 7
+
+        self.set_status(200)
+        self.finish()
+
 class FileUploadHandler(tornado.web.RequestHandler):
     def post(self):
         src_file = self.request.headers.get('X-FILE')
@@ -400,6 +419,7 @@ if __name__ == "__main__":
     application = tornado.web.Application(
       MessagesRouter.urls +
       [
+        (r'/project', ProjectHandler),
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

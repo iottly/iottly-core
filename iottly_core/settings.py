@@ -60,6 +60,10 @@ debug = True
 cookie_secret = 'secret'
 login_url = '/auth'
 
+#public urls prefix:
+#FIXME: remove dependency from dev / prod envs
+PUBLIC_URL_PREFIX = 'http://127.0.0.1:8550'
+
 try:
     from localsettings import *
 except ImportError:

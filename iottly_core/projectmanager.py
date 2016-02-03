@@ -1,7 +1,24 @@
-from iottly_core import util
+"""
 
-class Project(object):
-  template = {
+Copyright 2015 Stefano Terna
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+from iottly_core import schemadictionary as sd
+
+class Project(sd.SchemaDictionary):
+  schema = {
                 "name": r"^.+", 
                 "user": {
                    "email":r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
@@ -11,27 +28,29 @@ class Project(object):
                 "boards": [
                   {
                     "name":r"^.+",
-                    "ID": r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
                   }        
                 ],
               }
 
   def __init__(self, value):
-    if util.checkdictionary(value, self.template):
-      self.value = value
-    else:
-      raise Exception("Wrong project shape or data format.")
+    super(Project, self).__init__(value)
+    #TODO: check for boards name duplicates
 
-  def set_project_url(self, url):
-    self.value["projecturl"] = url
+  def set_project_ID(self, ID):
+    self.value["projectid"] = ID
+    self.value["projecturl"] = get_project_url(ID)
 
-  def set_agent_url(self, ID, url):
+  def set_board_ID(self, ID, url):
+    #TODO: set project ID for each board and then set agent url
     board = next((b for b in self.value["boards"] if b["ID"] == ID), None)
     if board:
       board["agenturl"] = url
     else:
       raise Exception("Board %s not found in project" % ID)
 
+
+def get_project_url(ID):
+    return "%s/%s"
 
 """
 Test:

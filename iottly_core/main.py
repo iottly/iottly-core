@@ -286,10 +286,15 @@ class ProjectHandler(BaseHandler):
         project = ujson.loads(project)
         project = projectmanager.Project(project)
 
+        project.set_IDs_and_urls()
+
         #set here logic to address issues 3 to 7
 
-        self.set_status(200)
-        self.finish()
+        self.write(json.dumps({
+            'status': 200,
+            'project': project.value
+        }, default=json_util.default))
+        self.set_header("Content-Type", "application/json")
 
 class FileUploadHandler(tornado.web.RequestHandler):
     def post(self):

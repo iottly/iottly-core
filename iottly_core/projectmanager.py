@@ -15,42 +15,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-from iottly_core import schemadictionary as sd
 
-class Project(sd.SchemaDictionary):
+import uuid
+
+from iottly_core import settings
+from iottly_core import validator
+
+class Project(validator.SchemaDictionary):
   schema = {
-                "name": r"^.+", 
-                "user": {
-                   "email":r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+                "name": {"type": "string", "regex": "^.+", "required": True}, 
+                "user": {"type": "dict", "schema": {
+                  "email":{"type": "string", "regex": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", "required": True}
+                  }, "required": True
                 },
-                "board":r"^Raspberry Pi", 
-                "fwlanguage":r"^Python",
-                "boards": [
-                  {
-                    "name":r"^.+",
-                  }        
-                ],
+                "board":{"type": "string", "allowed": ["Raspberry Pi"], "required": True}, 
+                "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
+                "boards": {"type": "list", "unique": {"key": "name"}, "schema": {
+                  "type": "dict", "schema": {
+                    "name":{"type": "string", "regex": "^.+", "required": True},
+                    }, "required": True
+                  }, "required": True
+                },
               }
 
   def __init__(self, value):
     super(Project, self).__init__(value)
-    #TODO: check for boards name duplicates
+    
 
-  def set_project_ID(self, ID):
-    self.value["projectid"] = ID
-    self.value["projecturl"] = get_project_url(ID)
+  def set_IDs_and_urls(self):
+    self.value['ID'] = str(uuid.uuid4())
+    self.value['projecturl'] = "%s/projects/%s" % (settings.PUBLIC_URL_PREFIX, self.value['ID'])
 
-  def set_board_ID(self, ID, url):
-    #TODO: set project ID for each board and then set agent url
-    board = next((b for b in self.value["boards"] if b["ID"] == ID), None)
-    if board:
-      board["agenturl"] = url
-    else:
-      raise Exception("Board %s not found in project" % ID)
+    for board in self.value['boards']:
+      board['ID'] = str(uuid.uuid4())
+      board['agenturl'] = "%s/boards/%s" % (self.value['projecturl'], board['ID'])
 
-
-def get_project_url(ID):
-    return "%s/%s"
 
 """
 Test:
@@ -64,8 +63,9 @@ Test:
   "boards": [
     {
       "name":"a",
-      "ID": "raspdev.0001@xmppbroker.localdev.iottly.org"
-    }        
+    },    {
+      "name":"b",
+    }
   ],
 }
 

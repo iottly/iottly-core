@@ -19,7 +19,7 @@ import os
 import pytz
 
 # MongoDB settings
-MONGO_DB_URL = 'mongodb://%s:%s/' % ("iottlydocker_db_1", 27017)
+MONGO_DB_URL = 'mongodb://%s:%s/' % ("db", 27017)
 MONGO_DB_NAME = 'iottly'
 
 TIMEZONE = pytz.timezone(pytz.country_timezones['it'][0])
@@ -39,8 +39,8 @@ XMPP_PASSWORD = 'iottlycore'
 GOOGLE_OAUTH2_CLIENT_ID = ''
 GOOGLE_OAUTH2_CLIENT_SECRET = ''
 
-PRESENCE_URL = 'http://iottlydocker_xmppbroker_1:9090/plugins/presence/status'
-CLIENT_CALLBACK_URL = 'http://iottlydocker_iottlyclientcore_1:8521/msg'
+PRESENCE_URL = 'http://xmppbroker:9090/plugins/presence/status'
+CLIENT_CALLBACK_URL = 'http://iottlyclientcore:8521/msg'
 
 
 # Filesystem binaries (FW/NN)

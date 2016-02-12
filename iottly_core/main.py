@@ -138,8 +138,8 @@ class MessageHandler(BaseHandler):
         msgs_json = json.dumps({ 'msgs': msgs }, default=json_util.default)
 
         yield [
-            self._insert_messages('message_logs', msg),
-            self._insert_messages('messages', persist_msgs),
+            _insert_messages('message_logs', msg),
+            _insert_messages('messages', persist_msgs),
             self._check_and_forward_messages(msgs)
             ]
 
@@ -177,13 +177,6 @@ class MessageHandler(BaseHandler):
         }, default=json_util.default))
         self.set_header("Content-Type", "application/json")
 
-    @gen.coroutine
-    def _insert_messages(self, collection_name, msgs):
-        if msgs is None or len(msgs) == 0:
-            return
-
-        new_id = yield db[collection_name].insert(msgs)
-        raise gen.Return(new_id)
 
     def _broadcast(self, msg):
         for client in connected_clients:
@@ -272,6 +265,14 @@ class MessageHandler(BaseHandler):
             if fn:
                 fn(msg)
 
+@gen.coroutine
+def _insert_messages(collection_name, msgs):
+    if msgs is None or len(msgs) == 0:
+        return
+
+    new_id = yield db[collection_name].insert(msgs)
+    raise gen.Return(new_id)
+
 
 
 class ProjectHandler(BaseHandler):
@@ -288,6 +289,10 @@ class ProjectHandler(BaseHandler):
 
         project.set_IDs_and_urls()
 
+
+        #store project on db
+        yield _insert_messages('projects', project.value)
+
         #set here logic to address issues 3 to 7
 
         self.write(json.dumps({
@@ -295,6 +300,14 @@ class ProjectHandler(BaseHandler):
             'project': project.value
         }, default=json_util.default))
         self.set_header("Content-Type", "application/json")
+
+    @gen.coroutine
+    def get(self, ID):
+
+        project = yield db.projects.find_one({'ID': ID,})
+        logging.info(project)
+
+
 
 class FileUploadHandler(tornado.web.RequestHandler):
     def post(self):
@@ -425,6 +438,7 @@ if __name__ == "__main__":
       MessagesRouter.urls +
       [
         (r'/project', ProjectHandler),
+        (r'/project/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', ProjectHandler),
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

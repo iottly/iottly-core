@@ -34,7 +34,7 @@ class Project(validator.SchemaDictionary):
                   "type": "dict", "schema": {
                     "name":{"type": "string", "regex": "^.+", "required": True},
                     }, "required": True
-                  }, "required": True
+                  }
                 },
               }
 
@@ -46,9 +46,6 @@ class Project(validator.SchemaDictionary):
     self.value['ID'] = str(uuid.uuid4())
     self.value['projecturl'] = "%s/projects/%s" % (settings.PUBLIC_URL_PREFIX, self.value['ID'])
 
-    for board in self.value['boards']:
-      board['ID'] = str(uuid.uuid4())
-      board['agenturl'] = "%s/boards/%s" % (self.value['projecturl'], board['ID'])
 
 
 """

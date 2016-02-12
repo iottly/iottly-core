@@ -23,6 +23,8 @@ from iottly_core import validator
 
 class Project(validator.SchemaDictionary):
   schema = {
+                "projecturl": {"type": "string"},
+                "_id": {"type": "objectid"},
                 "name": {"type": "string", "regex": "^.+", "required": True}, 
                 "user": {"type": "dict", "schema": {
                   "email":{"type": "string", "regex": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", "required": True}

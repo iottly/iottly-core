@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
+from bson.objectid import ObjectId
+
 import logging
 import cerberus
 
@@ -22,16 +24,20 @@ class SchemaDictionary(object):
     schema = {}
 
     def __init__(self, value):
-        v = UniqueValidator(self.schema)
+        v = IottlyValidators(self.schema)
         if v.validate(value):
             self.value = value
         else:
             raise Exception("Wrong schema or data format: %s" % str(v.errors))
 
 
-class UniqueValidator(cerberus.Validator):
+class IottlyValidators(cerberus.Validator):
     def _validate_unique(self, unique, field, value):
         if unique:
             if not len(set([v[unique["key"]] for v in value])) == len(value):
                 self._error(field, "elements must be unique based on '%s'" % unique["key"])
 
+
+    def _validate_type_objectid(self, field, value):
+        if not type(value) == ObjectId: 
+            self._error(field, 'Type error. Mongo ObjectId type is required.')

@@ -32,6 +32,7 @@ import urllib
 import urlparse
 
 from bson import json_util
+from bson.objectid import ObjectId
 from datetime import datetime
 from tornado import gen, autoreload, httpclient
 import tornado.ioloop
@@ -283,12 +284,11 @@ class ProjectHandler(BaseHandler):
     @gen.coroutine
     def post(self):
         project = self.get_argument('project', None)
-        logging.info(project)
+        
         project = ujson.loads(project)
         project = projectmanager.Project(project)
 
-        project.set_IDs_and_urls()
-
+        #project.set_IDs_and_urls()
 
         #store project on db
         yield _insert_messages('projects', project.value)
@@ -302,11 +302,29 @@ class ProjectHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
     @gen.coroutine
-    def get(self, ID):
+    def get(self, _id):
 
-        project = yield db.projects.find_one({'ID': ID,})
+        project = yield db.projects.find_one({"_id": ObjectId(_id)})
         logging.info(project)
 
+        self.write(json.dumps({
+            'status': 200,
+            'project': project
+        }, default=json_util.default))
+        self.set_header("Content-Type", "application/json")
+
+
+class DeviceHandler(BaseHandler):
+    @gen.coroutine
+    def get(self, _id, MAC):
+        project = yield db.projects.find_one({"_id": ObjectId(_id)})
+        try:
+            project = projectmanager.Project(project)
+            logging.info(project.value)
+        except Exception as e:
+            logging.error(e)
+            
+            
 
 
 class FileUploadHandler(tornado.web.RequestHandler):
@@ -438,7 +456,9 @@ if __name__ == "__main__":
       MessagesRouter.urls +
       [
         (r'/project', ProjectHandler),
-        (r'/project/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', ProjectHandler),
+        (r'/project/([0-9a-fA-F]{24})', ProjectHandler),
+        #(r'/project/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/device/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', DeviceHandler),
+        (r'/project/([0-9a-fA-F]{24})/device/(.*)', DeviceHandler),
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

@@ -34,7 +34,7 @@ XMPP_MGMT_REST_SECRET = 'EKdj6y0USG4tP4Ki'
 
 
 XMPP_DOMAIN = 'xmppbroker.localdev.iottly.org'
-XMPP_USER = 'iottlycore@x%s' % XMPP_DOMAIN
+XMPP_USER = 'iottlycore@%s' % XMPP_DOMAIN
 XMPP_PASSWORD = 'iottlycore'
 
 # See instructions for registering app with google:

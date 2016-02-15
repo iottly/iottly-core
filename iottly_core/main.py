@@ -24,6 +24,7 @@ import motor
 import os
 import pytz
 import pymongo
+import random
 import time
 import tornado
 import ujson
@@ -290,8 +291,9 @@ class ProjectHandler(BaseHandler):
             #store project on db
             write_result = yield dbapi.insert('projects', project.value)
             logging.info(write_result)
-            
+
             #set here logic to address issues 3 to 7
+            project.value["project_url"] = "%s/%s/%s" % (settings.PUBLIC_URL_PREFIX, "admin", str(project.value["_id"]))
             self.set_status(200)
             self.write(json.dumps(project.value, default=json_util.default))
             self.set_header("Content-Type", "application/json")
@@ -324,23 +326,62 @@ class ProjectHandler(BaseHandler):
 
 class DeviceRegistrationHandler(BaseHandler):
     @gen.coroutine
-    def get(self, _id, MAC):
+    def get(self, _id, macaddress):
         try:
             project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
             logging.info(project.value)
 
             #get board ID
-            board = project.add_board(MAC)
+            board = project.add_board(macaddress)
             logging.info(board)
 
-            #make call to xmppbroker to register new JID
+            #call xmppbroker to register new JID            
+            http_client = httpclient.AsyncHTTPClient()
 
-            write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
-            logging.info(write_result)
+            xmpp_password = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
+            post_data = {
+                "username": board["ID"],
+                "password": xmpp_password
+            }
+            body = json.dumps(post_data, default=json_util.default)
 
-            self.write(json.dumps(project.value, default=json_util.default))
-            self.set_header("Content-Type", "application/json")
+            headers = {
+                "Authorization": settings.XMPP_MGMT_REST_SECRET,
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
+
+            xmpp_api_url = settings.XMPP_MGMT_REST_URL
+            res = yield http_client.fetch(xmpp_api_url, method='POST', headers=headers, body=body)
+            if res.error:
+                raise Exception("Create user: " + res.error)
+            else:
+
+                post_data = {
+                    "jid": settings.XMPP_USER,
+                    "subscriptionType": "3"
+                }
+                body = json.dumps(post_data, default=json_util.default)
+                logging.info(body)
+
+                xmpp_api_url = "%s/%s/%s" % (settings.XMPP_MGMT_REST_URL, board["ID"], "roster")
+                logging.info(xmpp_api_url)
+                res = yield http_client.fetch(xmpp_api_url, method='POST', headers=headers, body=body)
+    
+                if res.error:
+                    raise Exception("Create roster: " + res.error)
+                else:
+
+                    write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
+                    logging.info(write_result)
+
+                    device_params = {
+                        "jid": board["JID"],
+                        "password": xmpp_password
+                    }
+                    self.write(json.dumps(device_params, default=json_util.default))
+                    self.set_header("Content-Type", "application/json")
 
 
         except Exception as e:
@@ -452,12 +493,14 @@ class AdminHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def get(self):
-        ibs = boards.boards
-        for ib in ibs['ibs']:
+    def get(self, _id):
+        project = yield dbapi.find_one_by_id("projects", _id)
+        project = projectmanager.Project(project)
+
+        for ib in project.value["boards"]:
             ib['hash'] = hashlib.md5(ib['macaddress']).hexdigest()
         self.render('admin.html',
-            ib_boards=ibs['ibs'],
+            ib_boards=project.value["boards"],
             commands=ibcommands.commands,
             CommandWithCustomUI=ibcommands.CommandWithCustomUI,
             sms_commands=ibcommands.sms_commands,
@@ -493,7 +536,7 @@ if __name__ == "__main__":
         (r'/auth', GoogleOAuth2LoginHandler),
         (r'/auth/logout', LogoutHandler),
         (r'/', MainHandler),
-        (r'/admin', AdminHandler)
+        (r'/admin/([0-9a-fA-F]{24})', AdminHandler)
       ], **app_settings)
 
     application.listen(8520)

@@ -32,10 +32,12 @@ class Project(validator.SchemaDictionary):
                 },
                 "board":{"type": "string", "allowed": ["Raspberry Pi"], "required": True}, 
                 "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
-                "boards": {"type": "list", "unique": {"key": "MAC"}, "schema": {
+                "boards": {"type": "list", "unique": {"key": "macaddress"}, "schema": {
                   "type": "dict", "schema": {
-                    "MAC":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
+                    "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
                     "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
+                    "JID": {"type": "string", "regex": "^.+", "required": True}, 
+                    "simnumber": {"type": "string"}
 
                     }, "required": True
                   }
@@ -46,13 +48,19 @@ class Project(validator.SchemaDictionary):
     super(Project, self).__init__(value)
     
 
-  def add_board(self, MAC):
+  def add_board(self, macaddress):
     if not "boards" in self.value.keys():
       self.value["boards"] = []
 
     ID = str(uuid.uuid4())
 
-    board = {"MAC": MAC, "ID": ID}
+    board = {
+      "macaddress": macaddress, 
+      "ID": ID, 
+      "JID": "%s@%s" % (ID, settings.XMPP_DOMAIN),
+      "simnumber": "---"
+    }
+    print board
     self.value["boards"].append(board)
 
     if not self.validate():

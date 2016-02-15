@@ -28,9 +28,13 @@ TIMEZONE = pytz.timezone(pytz.country_timezones['it'][0])
 TIME_FMT = "%Y-%m-%dT%H:%M:%S"
 
 # XMPP Client settings
-XMPP_SERVER = ('iottlydocker_xmppbroker_1', 5222)
+XMPP_SERVER = ('xmppbroker', 5222)
+XMPP_MGMT_REST_URL = 'http://xmppbroker:9090/plugins/restapi/v1/users'
+XMPP_MGMT_REST_SECRET = 'EKdj6y0USG4tP4Ki'
 
-XMPP_USER = 'iottlycore@xmppbroker.localdev.iottly.org'
+
+XMPP_DOMAIN = 'xmppbroker.localdev.iottly.org'
+XMPP_USER = 'iottlycore@x%s' % XMPP_DOMAIN
 XMPP_PASSWORD = 'iottlycore'
 
 # See instructions for registering app with google:

@@ -52,13 +52,16 @@ from iottly_core import flashmanager
 from iottly_core import permissions
 from iottly_core import boards
 from iottly_core import projectmanager
+from iottly_core.dbapi import db
+from iottly_core import dbapi
 
 logging.getLogger().setLevel(logging.DEBUG)
 
-db = motor.MotorClient(settings.MONGO_DB_URL)[settings.MONGO_DB_NAME]
 
 xmpp_process = commander.init(settings.XMPP_USER, settings.XMPP_PASSWORD)
 connected_clients = set()
+
+
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -139,8 +142,8 @@ class MessageHandler(BaseHandler):
         msgs_json = json.dumps({ 'msgs': msgs }, default=json_util.default)
 
         yield [
-            _insert_messages('message_logs', msg),
-            _insert_messages('messages', persist_msgs),
+            dbapi.insert('message_logs', msg),
+            dbapi.insert('messages', persist_msgs),
             self._check_and_forward_messages(msgs)
             ]
 
@@ -266,13 +269,6 @@ class MessageHandler(BaseHandler):
             if fn:
                 fn(msg)
 
-@gen.coroutine
-def _insert_messages(collection_name, msgs):
-    if msgs is None or len(msgs) == 0:
-        return
-
-    new_id = yield db[collection_name].insert(msgs)
-    raise gen.Return(new_id)
 
 
 
@@ -284,45 +280,75 @@ class ProjectHandler(BaseHandler):
     @gen.coroutine
     def post(self):
         project = self.get_argument('project', None)
-        
-        project = ujson.loads(project)
-        project = projectmanager.Project(project)
 
-        #project.set_IDs_and_urls()
+        try:
+            
+            project = ujson.loads(project)
+            project = projectmanager.Project(project)
 
-        #store project on db
-        yield _insert_messages('projects', project.value)
 
-        #set here logic to address issues 3 to 7
+            #store project on db
+            write_result = yield dbapi.insert('projects', project.value)
+            logging.info(write_result)
+            
+            #set here logic to address issues 3 to 7
+            self.set_status(200)
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
 
-        self.write(json.dumps({
-            'status': 200,
-            'project': project.value
-        }, default=json_util.default))
-        self.set_header("Content-Type", "application/json")
+        except Exception as e:
+            logging.error(e)
+            self.set_status(500)
+            self.write(json.dumps(repr(e), default=json_util.default))
+            self.set_header("Content-Type", "application/json")
 
     @gen.coroutine
     def get(self, _id):
 
-        project = yield db.projects.find_one({"_id": ObjectId(_id)})
-        logging.info(project)
+        try:
+            project = yield dbapi.find_one_by_id("projects", _id)
 
-        self.write(json.dumps({
-            'status': 200,
-            'project': project
-        }, default=json_util.default))
-        self.set_header("Content-Type", "application/json")
+            project = projectmanager.Project(project)
 
+            logging.info(project.value)
 
-class DeviceHandler(BaseHandler):
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            self.write(json.dumps(repr(e), default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+class DeviceRegistrationHandler(BaseHandler):
     @gen.coroutine
     def get(self, _id, MAC):
-        project = yield db.projects.find_one({"_id": ObjectId(_id)})
         try:
+            project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
             logging.info(project.value)
+
+            #get board ID
+            board = project.add_board(MAC)
+            logging.info(board)
+
+            #make call to xmppbroker to register new JID
+
+            write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
+            logging.info(write_result)
+
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+
         except Exception as e:
+
             logging.error(e)
+            self.set_status(500)
+            self.write(json.dumps(repr(e), default=json_util.default))
+            self.set_header("Content-Type", "application/json")
             
             
 
@@ -458,7 +484,7 @@ if __name__ == "__main__":
         (r'/project', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})', ProjectHandler),
         #(r'/project/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/device/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', DeviceHandler),
-        (r'/project/([0-9a-fA-F]{24})/device/(.*)', DeviceHandler),
+        (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

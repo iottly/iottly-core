@@ -22,14 +22,16 @@ import cerberus
 
 class SchemaDictionary(object):
     schema = {}
-
+    validator = None
     def __init__(self, value):
-        v = IottlyValidators(self.schema)
-        if v.validate(value):
+        self.validator = IottlyValidators(self.schema)
+        if self.validator.validate(value):
             self.value = value
         else:
-            raise Exception("Wrong schema or data format: %s" % str(v.errors))
+            raise Exception("Wrong schema or data format: %s" % str(self.validator.errors))
 
+    def validate(self):
+        return self.validator.validate(self.value)
 
 class IottlyValidators(cerberus.Validator):
     def _validate_unique(self, unique, field, value):

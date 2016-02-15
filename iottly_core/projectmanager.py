@@ -32,9 +32,11 @@ class Project(validator.SchemaDictionary):
                 },
                 "board":{"type": "string", "allowed": ["Raspberry Pi"], "required": True}, 
                 "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
-                "boards": {"type": "list", "unique": {"key": "name"}, "schema": {
+                "boards": {"type": "list", "unique": {"key": "MAC"}, "schema": {
                   "type": "dict", "schema": {
-                    "name":{"type": "string", "regex": "^.+", "required": True},
+                    "MAC":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
+                    "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
+
                     }, "required": True
                   }
                 },
@@ -44,10 +46,19 @@ class Project(validator.SchemaDictionary):
     super(Project, self).__init__(value)
     
 
-  def set_IDs_and_urls(self):
-    self.value['ID'] = str(uuid.uuid4())
-    self.value['projecturl'] = "%s/projects/%s" % (settings.PUBLIC_URL_PREFIX, self.value['ID'])
+  def add_board(self, MAC):
+    if not "boards" in self.value.keys():
+      self.value["boards"] = []
 
+    ID = str(uuid.uuid4())
+
+    board = {"MAC": MAC, "ID": ID}
+    self.value["boards"].append(board)
+
+    if not self.validate():
+      raise Exception(self.validator.errors)
+    
+    return board
 
 
 """

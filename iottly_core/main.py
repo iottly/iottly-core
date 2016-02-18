@@ -55,6 +55,7 @@ from iottly_core import boards
 from iottly_core import projectmanager
 from iottly_core.dbapi import db
 from iottly_core import dbapi
+from iottly_core import brokerapi
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -301,7 +302,8 @@ class ProjectHandler(BaseHandler):
         except Exception as e:
             logging.error(e)
             self.set_status(500)
-            self.write(json.dumps(repr(e), default=json_util.default))
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
     @gen.coroutine
@@ -321,74 +323,80 @@ class ProjectHandler(BaseHandler):
 
             logging.error(e)
             self.set_status(500)
-            self.write(json.dumps(repr(e), default=json_util.default))
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
 class DeviceRegistrationHandler(BaseHandler):
     @gen.coroutine
     def get(self, _id, macaddress):
         try:
+            logging.info('device registration request for mac {}'.format(macaddress))
+
             project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
-            logging.info(project.value)
 
             #get board ID
-            board = project.add_board(macaddress)
+            board = project.get_board(macaddress)
+
+            if not board:
+                #create board ID
+                logging.info('New board')
+
+                board = project.add_board(macaddress)
+                
+                apiresult = yield brokerapi.create_user(board["ID"], board["password"], settings.XMPP_USER)
+
+                write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
+                logging.info(write_result)
+
             logging.info(board)
 
-            #call xmppbroker to register new JID            
-            http_client = httpclient.AsyncHTTPClient()
+            #allways return board ID in case the board has been re-installed but was already registered
+            device_params = {
 
-            xmpp_password = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
-            post_data = {
-                "username": board["ID"],
-                "password": xmpp_password
+                "IOTTLY_XMPP_DEVICE_PASSWORD": board["password"],
+                "IOTTLY_XMPP_DEVICE_USER": board["JID"],
+                "IOTTLY_XMPP_SERVER_HOST": "xmppbroker",
+                "IOTTLY_XMPP_SERVER_PORT": 5222,
+                "IOTTLY_XMPP_SERVER_USER": settings.XMPP_USER                    
             }
-            body = json.dumps(post_data, default=json_util.default)
-
-            headers = {
-                "Authorization": settings.XMPP_MGMT_REST_SECRET,
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-            }
-
-            xmpp_api_url = settings.XMPP_MGMT_REST_URL
-            res = yield http_client.fetch(xmpp_api_url, method='POST', headers=headers, body=body)
-            if res.error:
-                raise Exception("Create user: " + res.error)
-            else:
-
-                post_data = {
-                    "jid": settings.XMPP_USER,
-                    "subscriptionType": "3"
-                }
-                body = json.dumps(post_data, default=json_util.default)
-                logging.info(body)
-
-                xmpp_api_url = "%s/%s/%s" % (settings.XMPP_MGMT_REST_URL, board["ID"], "roster")
-                logging.info(xmpp_api_url)
-                res = yield http_client.fetch(xmpp_api_url, method='POST', headers=headers, body=body)
-    
-                if res.error:
-                    raise Exception("Create roster: " + res.error)
-                else:
-
-                    write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
-                    logging.info(write_result)
-
-                    device_params = {
-                        "jid": board["JID"],
-                        "password": xmpp_password
-                    }
-                    self.write(json.dumps(device_params, default=json_util.default))
-                    self.set_header("Content-Type", "application/json")
+            self.write(json.dumps(device_params, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
 
 
         except Exception as e:
 
             logging.error(e)
             self.set_status(500)
-            self.write(json.dumps(repr(e), default=json_util.default))
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+            
+
+    @gen.coroutine
+    def delete(self, _id, macaddress):
+        try:
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+            logging.info(project.value)
+
+            #delete board ID
+            board = project.remove_board(macaddress)
+
+            logging.info('remove board: {}'.format(board))
+
+            apiresult = yield brokerapi.delete_user(board["ID"])
+
+            write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
+            logging.info(write_result)
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
             
             

@@ -17,6 +17,8 @@ limitations under the License.
 """
 
 import uuid
+import random
+
 
 from iottly_core import settings
 from iottly_core import validator
@@ -37,6 +39,7 @@ class Project(validator.SchemaDictionary):
                     "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
                     "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
                     "JID": {"type": "string", "regex": "^.+", "required": True}, 
+                    "password": {"type": "string"},
                     "simnumber": {"type": "string"}
 
                     }, "required": True
@@ -46,7 +49,14 @@ class Project(validator.SchemaDictionary):
 
   def __init__(self, value):
     super(Project, self).__init__(value)
-    
+
+
+  def get_board(self, macaddress):
+    boards = [b for b in self.value['boards'] if b['macaddress'] == macaddress]
+    if len(boards) == 1:
+      return boards[0]
+    else:
+      return None
 
   def add_board(self, macaddress):
     if not "boards" in self.value.keys():
@@ -57,10 +67,10 @@ class Project(validator.SchemaDictionary):
     board = {
       "macaddress": macaddress, 
       "ID": ID, 
-      "JID": "%s@%s" % (ID, settings.XMPP_DOMAIN),
+      "JID": "{}@{}".format(ID, settings.XMPP_DOMAIN),
+      "password": ''.join(random.choice('0123456789ABCDEF') for i in range(16)),
       "simnumber": "---"
     }
-    print board
     self.value["boards"].append(board)
 
     if not self.validate():
@@ -68,6 +78,10 @@ class Project(validator.SchemaDictionary):
     
     return board
 
+  def remove_board(self, macaddress):
+    board = [b for b in self.value['boards'] if b['macaddress'] == macaddress][0]
+    self.value['boards'].remove(board) 
+    return board
 
 """
 Test:

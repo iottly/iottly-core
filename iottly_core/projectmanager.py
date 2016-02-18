@@ -18,7 +18,7 @@ limitations under the License.
 
 import uuid
 import random
-
+import logging
 
 from iottly_core import settings
 from iottly_core import validator
@@ -52,11 +52,14 @@ class Project(validator.SchemaDictionary):
 
 
   def get_board(self, macaddress):
-    boards = [b for b in self.value['boards'] if b['macaddress'] == macaddress]
-    if len(boards) == 1:
-      return boards[0]
-    else:
-      return None
+    board = None
+    if 'boards' in self.value:
+      boards = [b for b in self.value['boards'] if b['macaddress'] == macaddress]
+
+      if len(boards) == 1:
+        board = boards[0]
+
+    return board
 
   def add_board(self, macaddress):
     if not "boards" in self.value.keys():

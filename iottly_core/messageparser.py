@@ -19,7 +19,7 @@ import copy
 import ujson
 import logging
 from datetime import datetime
-from iottly_core import settings
+from iottly_core.settings import settings
 
 codes_dict = {
     1: 'BoardReset',

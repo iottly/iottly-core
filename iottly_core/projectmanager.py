@@ -20,7 +20,7 @@ import uuid
 import random
 import logging
 
-from iottly_core import settings
+from iottly_core.settings import settings
 from iottly_core import validator
 
 class Project(validator.SchemaDictionary):

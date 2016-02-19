@@ -18,62 +18,70 @@ limitations under the License.
 import os
 import pytz
 
-# MongoDB settings
-MONGO_DB_URL = 'mongodb://%s:%s/' % ("db", 27017)
-MONGO_DB_NAME = 'iottly'
 
-TIMEZONE = pytz.timezone(pytz.country_timezones['it'][0])
+import prettysettings
 
-# python iso format stringtom
-TIME_FMT = "%Y-%m-%dT%H:%M:%S"
+defaults = dict(
 
-# XMPP Client settings
-XMPP_SERVER = ('xmppbroker', 5222)
-XMPP_MGMT_REST_URL = 'http://xmppbroker:9090/plugins/restapi/v1/users'
-XMPP_MGMT_REST_SECRET = 'EKdj6y0USG4tP4Ki'
+    # MongoDB settings
+    MONGO_DB_URL = 'mongodb://%s:%s/' % ("db", 27017),
+    MONGO_DB_NAME = 'iottly',
 
+    #TIMEZONE = pytz.timezone(pytz.country_timezones['it'][0]),
 
-XMPP_DOMAIN = 'xmppbroker.localdev.iottly.org'
-XMPP_USER = 'iottlycore@%s' % XMPP_DOMAIN
-XMPP_PASSWORD = 'iottlycore'
+    # python iso format stringtom
+    TIME_FMT = "%Y-%m-%dT%H:%M:%S",
 
-# See instructions for registering app with google:
-# http://tornado.readthedocs.org/en/latest/auth.html#tornado.auth.GoogleOAuth2Mixin
-# This key is configured for the production server at big.tomorrowdata.it:8520
-GOOGLE_OAUTH2_CLIENT_ID = ''
-GOOGLE_OAUTH2_CLIENT_SECRET = ''
-
-PRESENCE_URL = 'http://xmppbroker:9090/plugins/presence/status'
-CLIENT_CALLBACK_URL = 'http://iottlyclientcore:8521/msg'
+    # XMPP Client settings
+    XMPP_SERVER = ('xmppbroker', 5222),
+    XMPP_MGMT_REST_URL = 'http://xmppbroker:9090/plugins/restapi/v1/users',
+    XMPP_MGMT_REST_SECRET = 'EKdj6y0USG4tP4Ki',
 
 
-# Filesystem binaries (FW/NN)
-FIRMWARE_DIR = '/var/iottly-core/uploads/fw/'
+    XMPP_DOMAIN = 'xmppbroker.localdev.iottly.org',
+    XMPP_USER = 'iottlycore@xmppbroker.localdev.iottly.org',
+    XMPP_PASSWORD = 'iottlycore',
 
-SECRET_SALT = 'secrect'
-
-ADMINS = {
-}
+    PRESENCE_URL = 'http://xmppbroker:9090/plugins/presence/status',
+    CLIENT_CALLBACK_URL = 'http://iottlyclientcore:8521/msg',
 
 
-# Tornado specific settings, see http://www.tornadoweb.org/en/stable/web.html#tornado.web.Application.settings
-static_path = os.path.join("/iottly_console", "static")
-template_path = os.path.join("/iottly_console", "templates")
-debug = True
+    # Filesystem binaries (FW/NN)
+    FIRMWARE_DIR = '/var/iottly-core/uploads/fw/',
 
-cookie_secret = 'secret'
-login_url = '/auth'
+    SECRET_SALT = 'secrect',
 
-#public urls prefix:
-#FIXME: remove dependency from dev / prod envs
-PUBLIC_URL_PREFIX = 'http://127.0.0.1:8550'
+    ADMINS = {
+    },
 
-try:
-    from localsettings import *
-except ImportError:
-    pass
 
-google_oauth = {
-  'key': GOOGLE_OAUTH2_CLIENT_ID,
-  'secret': GOOGLE_OAUTH2_CLIENT_SECRET
-}
+    # Tornado specific settings, see http://www.tornadoweb.org/en/stable/web.html#tornado.web.Application.settings
+    static_path = os.path.join("/iottly_console", "static"),
+    template_path = os.path.join("/iottly_console", "templates"),
+    debug = True,
+
+    cookie_secret = 'secret',
+    login_url = '/auth',
+
+    #public urls prefix:
+    #FIXME: remove dependency from dev / prod envs
+    PUBLIC_URL_PREFIX = 'http://127.0.0.1:8550',
+
+    # See instructions for registering app with google:
+    # http://tornado.readthedocs.org/en/latest/auth.html#tornado.auth.GoogleOAuth2Mixin
+    # This key is configured for the production server
+    google_oauth = {
+      'key': 'GOOGLE_OAUTH2_CLIENT_ID',
+      'secret': 'GOOGLE_OAUTH2_CLIENT_SECRET'
+    },
+
+)
+
+
+settings = prettysettings.Settings(defaults, None)
+
+
+
+
+
+

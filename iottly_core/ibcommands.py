@@ -21,7 +21,7 @@ import hashlib
 import logging
 import ujson
 
-from iottly_core import settings
+from iottly_core.settings import settings
 from iottly_core import flashmanager
 
 class Command(object):

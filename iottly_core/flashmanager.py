@@ -21,7 +21,7 @@ import os
 
 from datetime import datetime
 
-from iottly_core import settings
+from iottly_core.settings import settings
 
 file_chunks_cache = {}
 

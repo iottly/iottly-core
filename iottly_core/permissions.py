@@ -17,7 +17,7 @@ limitations under the License.
 """
 from functools import wraps
 from tornado.web import HTTPError
-from iottly_core import settings
+from iottly_core.settings import settings
 
 def admin_only(method):
     @wraps(method)

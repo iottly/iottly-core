@@ -21,7 +21,7 @@ import logging
 from multiprocessing import Process, Queue
 
 from iottly_core import ibcommands
-from iottly_core import settings
+from iottly_core.settings import settings
 
 # Interprocess queue for dispatching xmpp messages
 msg_queue = Queue()

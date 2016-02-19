@@ -47,7 +47,7 @@ from iottly_core.util import module_to_dict, extract_request_dict
 
 from iottly_core import commander
 from iottly_core import ibcommands
-from iottly_core import settings
+from iottly_core.settings import settings
 from iottly_core import messageparser
 from iottly_core import flashmanager
 from iottly_core import permissions
@@ -56,6 +56,7 @@ from iottly_core import projectmanager
 from iottly_core.dbapi import db
 from iottly_core import dbapi
 from iottly_core import brokerapi
+from iottly_core.settings import settings
 
 logging.getLogger().setLevel(logging.DEBUG)
 

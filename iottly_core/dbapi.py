@@ -19,7 +19,7 @@ from tornado import gen
 from bson.objectid import ObjectId
 import motor
 
-from iottly_core import settings
+from iottly_core.settings import settings
 
 db = motor.MotorClient(settings.MONGO_DB_URL)[settings.MONGO_DB_NAME]
 

@@ -21,7 +21,7 @@ import logging
 from bson import json_util
 from tornado import gen, httpclient
 
-from iottly_core import settings
+from iottly_core.settings import settings
 
 
 HEADERS = {

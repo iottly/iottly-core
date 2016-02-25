@@ -66,7 +66,8 @@ defaults = dict(
 
     #public urls prefix:
     #FIXME: remove dependency from dev / prod envs
-    PUBLIC_URL_PREFIX = 'http://127.0.0.1:8550',
+    PUBLIC_HOST='127.0.0.2',
+    PUBLIC_URL_PATTERN = 'http://{}:8550',
 
     # See instructions for registering app with google:
     # http://tornado.readthedocs.org/en/latest/auth.html#tornado.auth.GoogleOAuth2Mixin
@@ -81,6 +82,7 @@ defaults = dict(
 cshooks = {
     'TIMEZONE': lambda settings: pytz.timezone(settings.TIMEZONESTR),
     'XMPP_SERVER': lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT),
+    'PUBLIC_URL_PREFIX': lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST)
 }
 
 settings = prettysettings.Settings(defaults, computed_settings_hooks = cshooks)

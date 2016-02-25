@@ -24,16 +24,17 @@ import prettysettings
 defaults = dict(
 
     # MongoDB settings
-    MONGO_DB_URL = 'mongodb://%s:%s/' % ("db", 27017),
+    MONGO_DB_URL = 'mongodb://{}:{}/'.format("db", 27017),
     MONGO_DB_NAME = 'iottly',
 
-    #TIMEZONE = pytz.timezone(pytz.country_timezones['it'][0]),
+    TIMEZONESTR = pytz.country_timezones['it'][0],
 
     # python iso format stringtom
     TIME_FMT = "%Y-%m-%dT%H:%M:%S",
 
     # XMPP Client settings
-    XMPP_SERVER = ('xmppbroker', 5222),
+    XMPP_HOST = 'xmppbroker',
+    XMPP_PORT = 5222,
     XMPP_MGMT_REST_URL = 'http://xmppbroker:9090/plugins/restapi/v1/users',
     XMPP_MGMT_REST_SECRET = 'EKdj6y0USG4tP4Ki',
 
@@ -77,8 +78,12 @@ defaults = dict(
 
 )
 
+cshooks = {
+    'TIMEZONE': lambda settings: pytz.timezone(settings.TIMEZONESTR),
+    'XMPP_SERVER': lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT),
+}
 
-settings = prettysettings.Settings(defaults, None)
+settings = prettysettings.Settings(defaults, computed_settings_hooks = cshooks)
 
 
 

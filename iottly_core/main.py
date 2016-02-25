@@ -295,7 +295,10 @@ class ProjectHandler(BaseHandler):
             logging.info(write_result)
 
             #set here logic to address issues 3 to 7
-            project.value["project_url"] = "%s/%s/%s" % (settings.PUBLIC_URL_PREFIX, "admin", str(project.value["_id"]))
+            project.value["project_url"] = settings.PROJECT_URL_TEMPLATE.format(str(project.value["_id"]))
+            project.value["project_get_agent_url"] = settings.GET_AGENT_URL_TEMPLATE.format(str(project.value["_id"]))
+            project.value["run_installer_command"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(project.value["project_get_agent_url"])
+
             self.set_status(200)
             self.write(json.dumps(project.value, default=json_util.default))
             self.set_header("Content-Type", "application/json")
@@ -400,6 +403,22 @@ class DeviceRegistrationHandler(BaseHandler):
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
             
+
+class GetAgentHandler(BaseHandler):
+    @gen.coroutine
+    def get(self, _id):
+        project = yield dbapi.find_one_by_id("projects", _id)
+        project = projectmanager.Project(project)
+
+        with open(settings.INSTALLER_FILE_PATHS[project.value["board"]], "r") as f:
+            installer = f.read().format(
+                IOTTLY_REGISTRATION_HOST=settings.PUBLIC_HOST_PORT, 
+                IOTTLY_REGISTRATION_SERVICE=settings.DEVICEREGISTRATION_SERVICE_TEMPLATE.format(_id)
+                )
+            self.write(installer)
+            #self.set_header("Content-Type", "application/text")
+            self.set_header('Content-Disposition', 'attachment; filename="installer.sh"')
+
             
 
 
@@ -535,8 +554,8 @@ if __name__ == "__main__":
       [
         (r'/project', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})', ProjectHandler),
-        #(r'/project/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/device/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', DeviceHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
+        (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

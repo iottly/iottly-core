@@ -32,7 +32,7 @@ class Project(validator.SchemaDictionary):
                   "email":{"type": "string", "regex": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", "required": True}
                   }, "required": True
                 },
-                "board":{"type": "string", "allowed": ["Raspberry Pi"], "required": True}, 
+                "board":{"type": "string", "allowed": settings.INSTALLER_FILE_PATHS.keys(), "required": True}, 
                 "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
                 "boards": {"type": "list", "unique": {"key": "macaddress"}, "schema": {
                   "type": "dict", "schema": {

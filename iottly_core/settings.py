@@ -17,7 +17,7 @@ limitations under the License.
 """
 import os
 import pytz
-
+from collections import OrderedDict
 
 import prettysettings
 
@@ -67,7 +67,23 @@ defaults = dict(
     #public urls prefix:
     #FIXME: remove dependency from dev / prod envs
     PUBLIC_HOST='127.0.0.2',
-    PUBLIC_URL_PATTERN = 'http://{}:8550',
+    PUBLIC_HOST_PORT_PATTERN='{}:8550',
+    PUBLIC_URL_PATTERN = 'http://{}',
+
+    PROJECT_URL_PATTERN = '{}/admin/{}',
+    GET_AGENT_URL_PATTERN = '{}/project/{}/getagent',
+    RUN_INSTALLER_COMMAND_TEMPLATE = 'wget -O - {} | bash',
+    DEVICEREGISTRATION_SERVICE_TEMPLATE = '/project/{}/deviceregistration',
+
+    #repo for devices' installers
+    DEVICE_INSTALLERS_REPO_PATH = '/iottly-device-agent-py-installers',
+
+    BOARDS_TYPE_MAP = {
+        'Raspberry Pi': 'raspberry-pi', 
+        'Dev Docker Device': 'dev-docker-device'
+    },
+
+    INSTALLER_FILENAME = 'installer.sh',
 
     # See instructions for registering app with google:
     # http://tornado.readthedocs.org/en/latest/auth.html#tornado.auth.GoogleOAuth2Mixin
@@ -79,11 +95,38 @@ defaults = dict(
 
 )
 
-cshooks = {
-    'TIMEZONE': lambda settings: pytz.timezone(settings.TIMEZONESTR),
-    'XMPP_SERVER': lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT),
-    'PUBLIC_URL_PREFIX': lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST)
-}
+# cshooks = {
+#     'TIMEZONE': lambda settings: pytz.timezone(settings.TIMEZONESTR),
+#     'XMPP_SERVER': lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT),
+#     'PUBLIC_HOST_PORT': lambda settings: settings.PUBLIC_HOST_PORT_PATTERN.format(settings.PUBLIC_HOST),
+#     'PUBLIC_URL_PREFIX': lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST_PORT_PATTERN.format(settings.PUBLIC_HOST)),
+#     'INSTALLER_FILE_PATHS': lambda settings: {
+#         k: os.path.join(
+#             settings.DEVICE_INSTALLERS_REPO_PATH,
+#             settings.BOARDS_TYPE_MAP[k],
+#             settings.INSTALLER_FILENAME) 
+#         for k in settings.BOARDS_TYPE_MAP.keys()
+#     }
+
+# }
+
+cshooks = OrderedDict([
+    ('TIMEZONE', lambda settings: pytz.timezone(settings.TIMEZONESTR)),
+    ('XMPP_SERVER', lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT)),
+    ('PUBLIC_HOST_PORT', lambda settings: settings.PUBLIC_HOST_PORT_PATTERN.format(settings.PUBLIC_HOST)),
+    ('PUBLIC_URL_PREFIX', lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST_PORT)),
+    ('PROJECT_URL_TEMPLATE', lambda settings: settings.PROJECT_URL_PATTERN.format(settings.PUBLIC_URL_PREFIX, '{}')),
+    ('GET_AGENT_URL_TEMPLATE', lambda settings: settings.GET_AGENT_URL_PATTERN.format(settings.PUBLIC_URL_PREFIX, '{}')),
+    ('INSTALLER_FILE_PATHS', lambda settings: {
+            k: os.path.join(
+                settings.DEVICE_INSTALLERS_REPO_PATH,
+                settings.BOARDS_TYPE_MAP[k],
+                settings.INSTALLER_FILENAME) 
+            for k in settings.BOARDS_TYPE_MAP.keys()
+        })
+
+])
+
 
 settings = prettysettings.Settings(defaults, computed_settings_hooks = cshooks)
 

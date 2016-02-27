@@ -289,15 +289,15 @@ class ProjectHandler(BaseHandler):
             project = ujson.loads(project)
             project = projectmanager.Project(project)
 
-
-            #store project on db
+            #store project on db to get an _id:
             write_result = yield dbapi.insert('projects', project.value)
             logging.info(write_result)
 
-            #set here logic to address issues 3 to 7
-            project.value["project_url"] = settings.PROJECT_URL_TEMPLATE.format(str(project.value["_id"]))
-            project.value["project_get_agent_url"] = settings.GET_AGENT_URL_TEMPLATE.format(str(project.value["_id"]))
-            project.value["run_installer_command"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(project.value["project_get_agent_url"])
+            #add computed data and store them again ... FIX THIS
+            project.set_project_urls()
+            write_result = yield dbapi.update_by_id('projects', project.value["_id"], project.value)
+            logging.info(write_result)
+
 
             self.set_status(200)
             self.write(json.dumps(project.value, default=json_util.default))
@@ -361,8 +361,8 @@ class DeviceRegistrationHandler(BaseHandler):
 
                 "IOTTLY_XMPP_DEVICE_PASSWORD": board["password"],
                 "IOTTLY_XMPP_DEVICE_USER": board["JID"],
-                "IOTTLY_XMPP_SERVER_HOST": "xmppbroker",
-                "IOTTLY_XMPP_SERVER_PORT": 5222,
+                "IOTTLY_XMPP_SERVER_HOST": settings.PUBLIC_XMPP_HOST,
+                "IOTTLY_XMPP_SERVER_PORT": settings.PUBLIC_XMPP_PORT,
                 "IOTTLY_XMPP_SERVER_USER": settings.XMPP_USER                    
             }
             self.write(json.dumps(device_params, default=json_util.default))

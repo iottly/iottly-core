@@ -65,8 +65,8 @@ defaults = dict(
     login_url = '/auth',
 
     #public urls prefix:
-    #FIXME: remove dependency from dev / prod envs
-    PUBLIC_HOST='127.0.0.2',
+    #HTTP:
+    PUBLIC_HOST='127.0.0.1',
     PUBLIC_HOST_PORT_PATTERN='{}:8550',
     PUBLIC_URL_PATTERN = 'http://{}',
 
@@ -74,6 +74,11 @@ defaults = dict(
     GET_AGENT_URL_PATTERN = '{}/project/{}/getagent',
     RUN_INSTALLER_COMMAND_TEMPLATE = 'wget -O - {} | bash',
     DEVICEREGISTRATION_SERVICE_TEMPLATE = '/project/{}/deviceregistration',
+
+    #XMPP:
+    PUBLIC_XMPP_HOST='127.0.0.1',
+    PUBLIC_XMPP_PORT = 5222,
+
 
     #repo for devices' installers
     DEVICE_INSTALLERS_REPO_PATH = '/iottly-device-agent-py-installers',

@@ -26,6 +26,8 @@ from iottly_core import validator
 class Project(validator.SchemaDictionary):
   schema = {
                 "projecturl": {"type": "string"},
+                "projectgetagenturl": {"type": "string"},
+                "runinstallercommand": {"type": "string"},
                 "_id": {"type": "objectid"},
                 "name": {"type": "string", "regex": "^.+", "required": True}, 
                 "user": {"type": "dict", "schema": {
@@ -49,6 +51,13 @@ class Project(validator.SchemaDictionary):
 
   def __init__(self, value):
     super(Project, self).__init__(value)
+
+  def set_project_urls(self):
+    _id = self.value["_id"]
+
+    self.value["projecturl"] = settings.PROJECT_URL_TEMPLATE.format(_id)
+    self.value["projectgetagenturl"] = settings.GET_AGENT_URL_TEMPLATE.format(_id)
+    self.value["runinstallercommand"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(self.value["projectgetagenturl"])
 
 
   def get_board(self, macaddress):

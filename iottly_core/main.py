@@ -285,8 +285,7 @@ class ProjectHandler(BaseHandler):
         project = self.get_argument('project', None)
 
         try:
-            
-            project = ujson.loads(project)
+            project = ujson.loads(self.request.body.decode('utf-8'))
             project = projectmanager.Project(project)
 
             #store project on db to get an _id:
@@ -309,6 +308,7 @@ class ProjectHandler(BaseHandler):
             error = {'error': '{}'.format(e)}
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
+            #raise e
 
     @gen.coroutine
     def get(self, _id):
@@ -368,6 +368,9 @@ class DeviceRegistrationHandler(BaseHandler):
             self.write(json.dumps(device_params, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
+            for client in connected_clients:
+                logging.info(client)
+                client.send(ujson.dumps(board))            
 
         except Exception as e:
 

@@ -47,6 +47,7 @@ class Project(validator.SchemaDictionary):
                     }, "required": True
                   }
                 },
+                "messages": {"type": "list"},
               }
 
   def __init__(self, value):

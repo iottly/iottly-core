@@ -365,7 +365,7 @@ class DeviceRegistrationHandler(BaseHandler):
             device_params = {
 
                 "IOTTLY_XMPP_DEVICE_PASSWORD": board["password"],
-                "IOTTLY_XMPP_DEVICE_USER": board["JID"],
+                "IOTTLY_XMPP_DEVICE_USER": board["jid"],
                 "IOTTLY_XMPP_SERVER_HOST": settings.PUBLIC_XMPP_HOST,
                 "IOTTLY_XMPP_SERVER_PORT": settings.PUBLIC_XMPP_PORT,
                 "IOTTLY_XMPP_SERVER_USER": settings.XMPP_USER                    

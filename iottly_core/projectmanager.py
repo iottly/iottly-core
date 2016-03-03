@@ -40,7 +40,7 @@ class Project(validator.SchemaDictionary):
                   "type": "dict", "schema": {
                     "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
                     "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
-                    "JID": {"type": "string", "regex": "^.+", "required": True}, 
+                    "jid": {"type": "string", "regex": "^.+", "required": True}, 
                     "password": {"type": "string"},
                     "simnumber": {"type": "string"}
 
@@ -80,7 +80,7 @@ class Project(validator.SchemaDictionary):
     board = {
       "macaddress": macaddress, 
       "ID": ID, 
-      "JID": "{}@{}".format(ID, settings.XMPP_DOMAIN),
+      "jid": "{}@{}".format(ID, settings.XMPP_DOMAIN),
       "password": ''.join(random.choice('0123456789ABCDEF') for i in range(16)),
       "simnumber": "---"
     }

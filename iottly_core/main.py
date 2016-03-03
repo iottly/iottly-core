@@ -142,7 +142,7 @@ class MessageHandler(BaseHandler):
         msg = messageparser.annotate_message(msg)
         msgs = messageparser.parse_message(copy.deepcopy(msg))
         persist_msgs = filter(messageparser.check_persist, msgs)
-        msgs_json = json.dumps({ 'msgs': msgs }, default=json_util.default)
+        
 
         yield [
             dbapi.insert('message_logs', msg),
@@ -150,7 +150,7 @@ class MessageHandler(BaseHandler):
             self._check_and_forward_messages(msgs)
             ]
 
-        self._broadcast(msgs_json)
+        self._broadcast({ 'msgs': msgs })
         self._process_msgs(msgs)
 
     #@tornado.web.authenticated
@@ -186,9 +186,10 @@ class MessageHandler(BaseHandler):
 
 
     def _broadcast(self, msg):
+        events_json = json.dumps({ 'events': msg }, default=json_util.default)
         for client in connected_clients:
             logging.info(client)
-            client.send(msg)
+            client.send(events_json)
 
     @gen.coroutine
     def _check_and_forward_messages(self, msgs):
@@ -335,6 +336,8 @@ class DeviceRegistrationHandler(BaseHandler):
     @gen.coroutine
     def get(self, _id, macaddress):
         try:
+            dispatch_board = {'registration': {'new': False}}
+
             logging.info('device registration request for mac {}'.format(macaddress))
 
             project = yield dbapi.find_one_by_id("projects", _id)
@@ -354,6 +357,8 @@ class DeviceRegistrationHandler(BaseHandler):
                 write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
                 logging.info(write_result)
 
+                dispatch_board.update({'registration': {'new': True}})
+
             logging.info(board)
 
             #allways return board ID in case the board has been re-installed but was already registered
@@ -368,9 +373,9 @@ class DeviceRegistrationHandler(BaseHandler):
             self.write(json.dumps(device_params, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
-            for client in connected_clients:
-                logging.info(client)
-                client.send(ujson.dumps(board))            
+            del board['password']
+            dispatch_board['registration'].update({'board': board})
+            self._broadcast(dispatch_board)
 
         except Exception as e:
 
@@ -380,6 +385,12 @@ class DeviceRegistrationHandler(BaseHandler):
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
             
+
+    def _broadcast(self, msg):
+        devices_json = json.dumps({ 'devices': msg }, default=json_util.default)
+        for client in connected_clients:
+            logging.info(client)
+            client.send(devices_json)
 
     @gen.coroutine
     def delete(self, _id, macaddress):

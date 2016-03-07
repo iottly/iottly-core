@@ -312,6 +312,20 @@ class ProjectHandler(BaseHandler):
             #raise e
 
     @gen.coroutine
+    def delete(self, _id):
+        try:
+            logging.info(_id)
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+
+    @gen.coroutine
     def get(self, _id):
 
         try:

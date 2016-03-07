@@ -315,14 +315,27 @@ class ProjectHandler(BaseHandler):
     def get(self, _id):
 
         try:
-            project = yield dbapi.find_one_by_id("projects", _id)
+            if _id:
+                project = yield dbapi.find_one_by_id("projects", _id)
 
-            project = projectmanager.Project(project)
+                project = projectmanager.Project(project)
 
-            logging.info(project.value)
+                logging.info(project.value)
 
-            self.write(json.dumps(project.value, default=json_util.default))
-            self.set_header("Content-Type", "application/json")
+                self.write(json.dumps(project.value, default=json_util.default))
+                self.set_header("Content-Type", "application/json")
+            else:
+                projects = yield dbapi.find_all("projects", sort=[('name', pymongo.ASCENDING)], limit=10)
+                logging.info(projects)
+                projects_val = []
+                for project in projects:
+                    project_val = projectmanager.Project(project)
+                    projects_val.append(project_val.value)
+
+                self.write(json.dumps(projects_val, default=json_util.default))
+                self.set_header("Content-Type", "application/json")
+
+
 
         except Exception as e:
 
@@ -567,7 +580,7 @@ if __name__ == "__main__":
       MessagesRouter.urls +
       [
         (r'/project', ProjectHandler),
-        (r'/project/([0-9a-fA-F]{24})', ProjectHandler),
+        (r'/project/($|[0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/file', FileUploadHandler),

@@ -37,6 +37,21 @@ def find_one_by_id(collection_name, _id):
     result = yield db[collection_name].find_one({"_id": ObjectId(_id)})
     raise gen.Return(result)
 
+
+@gen.coroutine
+def find_all(collection_name, sort, limit):
+    cursor = db[collection_name].find()
+
+    results = []
+
+    # Modify the query before iterating
+    cursor.sort(sort).limit(limit)
+    while (yield cursor.fetch_next):
+        results.append(cursor.next_object())
+
+    raise gen.Return(results)
+
+
 @gen.coroutine
 def update_by_id(collection_name, _id, document):
     result = yield db[collection_name].update({"_id": ObjectId(_id)},

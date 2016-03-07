@@ -33,6 +33,12 @@ def insert(collection_name, data):
     raise gen.Return(new_id)
 
 @gen.coroutine
+def remove_by_id(collection_name, _id):
+    result = yield db[collection_name].remove({"_id": ObjectId(_id)})    
+    raise gen.Return(result)
+
+
+@gen.coroutine
 def find_one_by_id(collection_name, _id):
     result = yield db[collection_name].find_one({"_id": ObjectId(_id)})
     raise gen.Return(result)

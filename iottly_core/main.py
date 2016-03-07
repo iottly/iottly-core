@@ -315,6 +315,9 @@ class ProjectHandler(BaseHandler):
     def delete(self, _id):
         try:
             logging.info(_id)
+            delete_result = yield dbapi.remove_by_id('projects', _id)
+            logging.info(delete_result)
+            self.set_status(200)
 
         except Exception as e:
 

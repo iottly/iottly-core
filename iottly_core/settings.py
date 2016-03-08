@@ -66,14 +66,15 @@ defaults = dict(
 
     #public urls prefix:
     #HTTP:
+    API_VERSION='v1.0',
     PUBLIC_HOST='127.0.0.1',
     PUBLIC_HOST_PORT_PATTERN='{}:8550',
-    PUBLIC_URL_PATTERN = 'http://{}',
+    PUBLIC_URL_PATTERN = 'http://{}/{}',
 
     PROJECT_URL_PATTERN = '{}/admin/{}',
     GET_AGENT_URL_PATTERN = '{}/project/{}/getagent',
     RUN_INSTALLER_COMMAND_TEMPLATE = 'wget -O - {} | bash',
-    DEVICEREGISTRATION_SERVICE_TEMPLATE = '/project/{}/deviceregistration',
+    DEVICEREGISTRATION_SERVICE_PATTERN = '/{}/project/{}/deviceregistration',
 
     #XMPP:
     PUBLIC_XMPP_HOST='127.0.0.1',
@@ -119,9 +120,11 @@ cshooks = OrderedDict([
     ('TIMEZONE', lambda settings: pytz.timezone(settings.TIMEZONESTR)),
     ('XMPP_SERVER', lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT)),
     ('PUBLIC_HOST_PORT', lambda settings: settings.PUBLIC_HOST_PORT_PATTERN.format(settings.PUBLIC_HOST)),
-    ('PUBLIC_URL_PREFIX', lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST_PORT)),
+    ('PUBLIC_URL_PREFIX', lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST_PORT, settings.API_VERSION)),
     ('PROJECT_URL_TEMPLATE', lambda settings: settings.PROJECT_URL_PATTERN.format(settings.PUBLIC_URL_PREFIX, '{}')),
     ('GET_AGENT_URL_TEMPLATE', lambda settings: settings.GET_AGENT_URL_PATTERN.format(settings.PUBLIC_URL_PREFIX, '{}')),
+    ('DEVICEREGISTRATION_SERVICE_TEMPLATE', lambda settings: settings.DEVICEREGISTRATION_SERVICE_PATTERN.format(settings.API_VERSION, '{}')),
+
     ('INSTALLER_FILE_PATHS', lambda settings: {
             k: os.path.join(
                 settings.DEVICE_INSTALLERS_REPO_PATH,

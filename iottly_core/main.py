@@ -314,7 +314,12 @@ class ProjectHandler(BaseHandler):
     @gen.coroutine
     def delete(self, _id):
         try:
-            logging.info(_id)
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+            logging.info(project.value)
+            for board in project.value["boards"]:
+                apiresult = yield brokerapi.delete_user(board["ID"])
+
             delete_result = yield dbapi.remove_by_id('projects', _id)
             logging.info(delete_result)
             self.set_status(200)

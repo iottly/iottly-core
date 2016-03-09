@@ -38,6 +38,7 @@ class Project(validator.SchemaDictionary):
                 "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
                 "boards": {"type": "list", "unique": {"key": "macaddress"}, "schema": {
                   "type": "dict", "schema": {
+                    "name": {"type": "string"},
                     "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
                     "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
                     "jid": {"type": "string", "regex": "^.+", "required": True}, 

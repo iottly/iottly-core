@@ -282,8 +282,8 @@ class ProjectHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def post(self):
-        project = self.get_argument('project', None)
+    def post(self, _id):
+        logging.info(_id)
 
         try:
             project = ujson.loads(self.request.body.decode('utf-8'))
@@ -298,10 +298,33 @@ class ProjectHandler(BaseHandler):
             write_result = yield dbapi.update_by_id('projects', project.value["_id"], project.value)
             logging.info(write_result)
 
+        except Exception as e:
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+    @gen.coroutine
+    def put(self, _id):
+        logging.info(_id)
+
+        try:
+            update = ujson.loads(self.request.body.decode('utf-8'))
+            
+            if not "filter" in update.keys():
+                update.update({"filter": {}})
+
+            write_result = yield dbapi.update_by_id('projects', _id, update["document"], update["filter"])
+            logging.info(write_result)
+            project = yield dbapi.find_one_by_id("projects", _id)
+            #TODO: schema validation after update is bad ...
+            project = projectmanager.Project(project)
 
             self.set_status(200)
             self.write(json.dumps(project.value, default=json_util.default))
             self.set_header("Content-Type", "application/json")
+
 
         except Exception as e:
             logging.error(e)
@@ -309,7 +332,7 @@ class ProjectHandler(BaseHandler):
             error = {'error': '{}'.format(e)}
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
-            #raise e
+
 
     @gen.coroutine
     def delete(self, _id):
@@ -317,8 +340,9 @@ class ProjectHandler(BaseHandler):
             project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
             logging.info(project.value)
-            for board in project.value["boards"]:
-                apiresult = yield brokerapi.delete_user(board["ID"])
+            if "boards" in project.value.keys():
+                for board in project.value["boards"]:
+                    apiresult = yield brokerapi.delete_user(board["ID"])
 
             delete_result = yield dbapi.remove_by_id('projects', _id)
             logging.info(delete_result)
@@ -601,8 +625,7 @@ if __name__ == "__main__":
     application = tornado.web.Application(
       MessagesRouter.urls +
       [
-        (r'/project', ProjectHandler),
-        (r'/project/($|[0-9a-fA-F]{24})', ProjectHandler),
+        (r'/project/?($|[0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/file', FileUploadHandler),

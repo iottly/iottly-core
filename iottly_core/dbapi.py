@@ -59,7 +59,11 @@ def find_all(collection_name, sort, limit):
 
 
 @gen.coroutine
-def update_by_id(collection_name, _id, document):
-    result = yield db[collection_name].update({"_id": ObjectId(_id)},
+def update_by_id(collection_name, _id, document, filter=None):
+    search = {"_id": ObjectId(_id)}
+    if filter:
+        search.update(filter)
+
+    result = yield db[collection_name].update(search,
                                              {"$set": document})
     raise gen.Return(result)

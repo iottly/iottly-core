@@ -508,8 +508,10 @@ class PresenceHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def get(self):
-        jid = self.get_argument('jid', '')
+    def get(self, jid):
+        if not jid:
+            #api has two modes (jid in url or jid in argument)
+            jid = self.get_argument('jid', '')
         http_client = httpclient.AsyncHTTPClient()
         url = url_concat(settings.PRESENCE_URL, {'jid': jid, 'req_jid':settings.XMPP_USER, 'type': 'text'})
         logging.info('PRESENCE_URL: %s' % url)
@@ -632,7 +634,7 @@ if __name__ == "__main__":
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),
         (r'/msg', MessageHandler),
-        (r'/presence', PresenceHandler),
+        (r'/presence/?(.*)', PresenceHandler),
         (r'/auth', GoogleOAuth2LoginHandler),
         (r'/auth/logout', LogoutHandler),
         (r'/', MainHandler),

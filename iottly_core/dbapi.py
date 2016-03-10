@@ -57,6 +57,18 @@ def find_all(collection_name, sort, limit):
 
     raise gen.Return(results)
 
+@gen.coroutine
+def find_one_array_by_condition(collection_name, arrayname, condition):
+    result = yield db[collection_name].find_one(
+        condition, 
+        { "{}.$".format(arrayname): 1 })
+    if arrayname in result and len(result[arrayname]) > 0:
+        result = result[arrayname][0]
+    else: 
+        result = None
+
+    raise gen.Return(result)
+
 
 @gen.coroutine
 def update_by_id(collection_name, _id, document, filter=None):
@@ -67,3 +79,5 @@ def update_by_id(collection_name, _id, document, filter=None):
     result = yield db[collection_name].update(search,
                                              {"$set": document})
     raise gen.Return(result)
+
+

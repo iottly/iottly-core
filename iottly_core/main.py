@@ -131,7 +131,7 @@ class MessageHandler(BaseHandler):
         }
 
     @gen.coroutine
-    def post(self):
+    def post(self, boardid):
         request_args = ('to', 'from', 'msg')
         msg = { k: self.get_argument(k) for k in request_args }
 
@@ -156,8 +156,17 @@ class MessageHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def get(self):
-        jid = self.get_argument('jid')
+    def get(self, boardid):
+        logging.info('msg get')
+        jid = ''
+        if not boardid:
+            jid = self.get_argument('jid')
+        else:
+            board = yield dbapi.find_one_array_by_condition('projects', 'boards', {'boards.ID': {'$eq': boardid}})
+            if board:
+                jid = '{}/IB'.format(board['jid']) #FIXME: /IB is a hack maybe remove it at store time
+
+        logging.info(jid)
         query_json = self.get_argument('queryJson', None)
         num_messages = int(self.get_argument('numMessages', None) or 10)
         query_dict = { 'from' : jid }
@@ -297,6 +306,10 @@ class ProjectHandler(BaseHandler):
             project.set_project_urls()
             write_result = yield dbapi.update_by_id('projects', project.value["_id"], project.value)
             logging.info(write_result)
+
+            self.set_status(200)
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
 
         except Exception as e:
             logging.error(e)
@@ -508,10 +521,17 @@ class PresenceHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def get(self, jid):
-        if not jid:
+    def get(self, boardid):
+        jid = ''
+        if not boardid:
             #api has two modes (jid in url or jid in argument)
             jid = self.get_argument('jid', '')
+        else:
+            #get project
+            board = yield dbapi.find_one_array_by_condition('projects', 'boards', {'boards.ID': {'$eq': boardid}})
+            if board:
+                jid = board['jid']
+
         http_client = httpclient.AsyncHTTPClient()
         url = url_concat(settings.PRESENCE_URL, {'jid': jid, 'req_jid':settings.XMPP_USER, 'type': 'text'})
         logging.info('PRESENCE_URL: %s' % url)
@@ -633,7 +653,7 @@ if __name__ == "__main__":
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),
-        (r'/msg', MessageHandler),
+        (r'/msg/?(.*)', MessageHandler),
         (r'/presence/?(.*)', PresenceHandler),
         (r'/auth', GoogleOAuth2LoginHandler),
         (r'/auth/logout', LogoutHandler),

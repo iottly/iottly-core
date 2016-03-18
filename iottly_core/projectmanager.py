@@ -48,7 +48,8 @@ class Project(validator.SchemaDictionary):
                     }, "required": True
                   }
                 },
-                "messages": {"type": "list"},
+                # FIX check message type based on dynamic attributes:
+                "messages": {"type": "list", "uniquetype": True},
               }
 
   def __init__(self, value):
@@ -96,6 +97,22 @@ class Project(validator.SchemaDictionary):
     board = [b for b in self.value['boards'] if b['macaddress'] == macaddress][0]
     self.value['boards'].remove(board) 
     return board
+
+  def add_message(self, message):
+    if not "messages" in self.value.keys():
+      self.value["messages"] = []
+
+    self.value["messages"].append(message)
+
+    if not self.validate():
+      raise Exception(self.validator.errors)
+    
+    return message
+
+  def remove_message(self, messagetype):
+    message = [m for m in self.value['messages'] if m['metadata']['type'] == messagetype][0]
+    self.value['messages'].remove(message) 
+    return message
 
 """
 Test:

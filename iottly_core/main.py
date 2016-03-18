@@ -488,6 +488,65 @@ class DeviceRegistrationHandler(BaseHandler):
             error = {'error': '{}'.format(e)}
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
+
+
+
+class MessageDefinitionHandler(BaseHandler):
+    @gen.coroutine
+    def post(self, _id, messagetype):
+        try:
+
+            logging.info('message definition request')
+            message = ujson.loads(self.request.body.decode('utf-8'))
+            logging.info(message)
+
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+
+            message = project.add_message(message)
+            
+            write_result = yield dbapi.update_by_id('projects', _id, {"messages": project.value["messages"]})
+            logging.info(write_result)
+
+            self.set_status(200)
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+            
+
+    @gen.coroutine
+    def delete(self, _id, messagetype):
+        try:
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+            logging.info(project.value)
+
+            #delete board ID
+            message = project.remove_message(messagetype)
+
+            logging.info('remove message: {}'.format(message))
+
+            write_result = yield dbapi.update_by_id('projects', _id, {"messages": project.value["messages"]})
+            logging.info(write_result)
+
+            self.set_status(200)
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
             
 
 class GetAgentHandler(BaseHandler):
@@ -549,9 +608,11 @@ class CommandHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     def post(self):
+        logging.info(self.request.arguments)
         command_name = self.get_argument('cmd', None)
         to_jid = self.get_argument('jid', None)
         values = extract_request_dict(self.request, 'values')
+        logging.info('---' + str(values))
         try:
             commander.send_command(command_name, to_jid, values)
         except ValueError, e:
@@ -650,6 +711,7 @@ if __name__ == "__main__":
         (r'/project/?($|[0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
+        (r'/project/([0-9a-fA-F]{24})/messagedefinition/?($|.*)', MessageDefinitionHandler),        
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

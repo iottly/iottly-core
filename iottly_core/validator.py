@@ -39,6 +39,11 @@ class IottlyValidators(cerberus.Validator):
             if not len(set([v[unique["key"]] for v in value])) == len(value):
                 self._error(field, "elements must be unique based on '%s'" % unique["key"])
 
+    def _validate_uniquetype(self, uniquetype, field, value):
+        if uniquetype:
+            if not len(set([v['metadata']['type'] for v in value])) == len(value):
+                self._error(field, "elements must be unique based on metadata.type")
+
 
     def _validate_type_objectid(self, field, value):
         if not type(value) == ObjectId: 

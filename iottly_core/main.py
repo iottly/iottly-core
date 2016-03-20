@@ -519,7 +519,35 @@ class MessageDefinitionHandler(BaseHandler):
             error = {'error': '{}'.format(e)}
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
+
+    @gen.coroutine
+    def put(self, _id, messagetype):
+        try:
+
+            logging.info('message definition request')
+            message = ujson.loads(self.request.body.decode('utf-8'))
+            logging.info(message)
+
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+
+            project.remove_message(message['metadata']['type'])
+            message = project.add_message(message)
             
+            write_result = yield dbapi.update_by_id('projects', _id, {"messages": project.value["messages"]})
+            logging.info(write_result)
+
+            self.set_status(200)
+            self.write(json.dumps(project.value, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")            
 
     @gen.coroutine
     def delete(self, _id, messagetype):

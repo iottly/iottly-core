@@ -25,69 +25,68 @@ from iottly_core import validator
 
 class Project(validator.SchemaDictionary):
   schema = {
-                "projecturl": {"type": "string"},
-                "projectgetagenturl": {"type": "string"},
-                "runinstallercommand": {"type": "string"},
-                "_id": {"type": "objectid"},
-                "name": {"type": "string", "regex": "^.+", "required": True}, 
-                "user": {
+              "projecturl": {"type": "string"},
+              "projectgetagenturl": {"type": "string"},
+              "runinstallercommand": {"type": "string"},
+              "_id": {"type": "objectid"},
+              "name": {"type": "string", "regex": "^.+", "required": True}, 
+              "user": {
+                "type": "dict", 
+                "schema": {
+                  "email":{"type": "string", "regex": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", "required": True}
+                }, 
+                "required": True
+              },
+              "board":{"type": "string", "allowed": settings.INSTALLER_FILE_PATHS.keys(), "required": True}, 
+              "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
+              "boards": {
+                "type": "list", 
+                "unique": {"key": "macaddress"}, 
+                "schema": {
                   "type": "dict", 
                   "schema": {
-                    "email":{"type": "string", "regex": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", "required": True}
+                    "name": {"type": "string"},
+                    "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
+                    "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
+                    "jid": {"type": "string", "regex": "^.+", "required": True}, 
+                    "password": {"type": "string"},
+                    "simnumber": {"type": "string"}
                   }, 
-                  "required": True
-                },
-                "board":{"type": "string", "allowed": settings.INSTALLER_FILE_PATHS.keys(), "required": True}, 
-                "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
-                "boards": {
-                  "type": "list", 
-                  "unique": {"key": "macaddress"}, 
-                  "schema": {
-                    "type": "dict", 
-                    "schema": {
-                      "name": {"type": "string"},
-                      "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
-                      "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
-                      "jid": {"type": "string", "regex": "^.+", "required": True}, 
-                      "password": {"type": "string"},
-                      "simnumber": {"type": "string"}
-                    }, 
-                    "required": True
-                  }
-                },
-                # FIX check message type based on dynamic attributes:
-                "messages": {
-                  "type": "list", 
-                  "uniquetype": True, 
-                  "schema": {
-                    "type": "dict", 
-                    "schema": {
-                      "metadata": {
-                        "type": "dict", 
-                        "schema": {
-                          "type": {"type": "string"},
-                          "description": {"type": "string"},
-                          "direction": {"type": "string", "allowed": ["command", "event"]}
-                        }, 
-                        "required": True
-                      }
-                    },
-                    "allow_unknown": True,
-
-                    # TODO: this is the type for the unknwon: (check how to extend cerberus to validate this)
-                    # {
-                    #   "type": "dict", 
-                    #   "schema": {
-                    #     "valuetype": {"type": "string", "allowed": ["SingleValue", "MultipleChoice", "FreeValue"], "required": True},
-                    #     "value": {"type": "string"},
-                    #     "listvalues": {"type": "list"}
-                    #   }
-                    # }
-
-                  }, 
-                  "required": True
+                  "required": True                  
                 }
-              }
+              },
+              "messages": {
+                "type": "list",
+                "required": True,
+                "uniquetype": True,
+                "schema": {
+                  "type": "dict", 
+                  "schema": {
+                    "metadata": {
+                      "type": "dict", 
+                      "required": True,
+                      "schema": {
+                        "type": {"type": "string"},
+                        "description": {"type": "string"},
+                        "direction": {"type": "string", "allowed": ["command", "event"]}
+                      }
+                    }
+                  },
+                  "allow_unknown": {
+                    "type": "dict",
+                    "schema": {},
+                    "allow_unknown" : {
+                      "type": "dict",
+                      "schema": {
+                        "type": {"type": "string", "allowed": ["FixedValue", "MultipleChoice", "FreeValue"], "required": True},
+                        "value": {"type": "string"},
+                        "listvalues": {"type": "list", "schema": {"type": "string"}}                        
+                      }
+                    }
+                  }                  
+                }
+              }  
+            }
 
   def __init__(self, value):
     super(Project, self).__init__(value)

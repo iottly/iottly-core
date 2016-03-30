@@ -90,6 +90,37 @@ class Command(object):
         return hashlib.md5(str(self)).hexdigest()
 
 
+    @staticmethod
+    def deserialize(ui_command_def):
+        cmd = copy.deepcopy(ui_command_def)
+        metadata = cmd.pop('metadata')
+        obj = Command(metadata['type'], metadata['description'], '/json {}'.format(metadata['jsonfmt']))
+
+class CommandWithStandardUI(Command):
+    def __init__(self, *args, **kwargs):
+        self.cmd_properties = kwargs.pop('cmd_properties')
+        name = args[0]
+        kwargs.update({'cmd_msg': '/json {}'.format(self._render_ui_command_def(name))})
+        super(CommandWithStandardUI, self).__init__(*args, **kwargs)
+
+    def _render_ui_command_def(self, name):
+        
+        props = {k: self._render_property(prop) for k, prop in self.cmd_properties.items()}
+        return ujson.dumps({name: props})
+
+    def _render_property(self, prop):
+        if prop['type'] == 'FixedValue':
+            return prop['value']
+        elif prop['type'] == 'MultipleChoice':
+            return '<{}>'.format('|'.join(prop['listvalues']))
+        elif prop['type'] == 'FreeValue':
+            return '<free value>'
+
+    def to_ui_command_def(self):
+        obj = {self.name: self.cmd_properties}
+        obj.update({'metadata': {'type': self.name, 'description': self.desc, 'direction': 'command', 'jsonfmt': self.cmd_msg[6:]}})
+        return obj
+
 class CommandWithCustomUI(Command):
     def __init__(self, *args, **kwargs):
         self.js = kwargs.pop('js', None)
@@ -107,12 +138,16 @@ sms_commands = list()
 sms_commands_by_name = dict()
 
 commands.extend([
-    Command('ECHO Test', 'Test the board communication with an echo request - response', '/json {"ECHO":{"content":"IOTTLY hello world!!!!"}}'),
+    CommandWithStandardUI('ECHO', 'Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FixedValue", "value": "IOTTLY hello world!!!!"}}),
+    CommandWithStandardUI('ECHOList', 'List to Test the board communication with an echo request - response', cmd_properties={"content":{"type": "MultipleChoice", "listvalues": ['Iottly', 'Hello', 'World']}}),
+    CommandWithStandardUI('ECHOFree', 'Free value to Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FreeValue"}}),
+
     CommandWithCustomUI(
         'Upload Firmware',
         'Upload and flash a new firmware',
         '/json {"fw":{"startupgrading":1, "area":0, "file": "", "md5": ""}}',
         warn=True,
+        show=False,
         template='flash_fw.html',
         js='flash.js',
         context={

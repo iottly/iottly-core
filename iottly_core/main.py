@@ -304,6 +304,8 @@ class ProjectHandler(BaseHandler):
 
             #add computed data and store them again ... FIX THIS
             project.set_project_urls()
+            project.init_messages([cmd.to_ui_command_def() for cmd in ibcommands.commands if cmd.show])
+
             write_result = yield dbapi.update_by_id('projects', project.value["_id"], project.value)
             logging.info(write_result)
 

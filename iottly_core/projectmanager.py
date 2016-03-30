@@ -66,9 +66,10 @@ class Project(validator.SchemaDictionary):
                       "type": "dict", 
                       "required": True,
                       "schema": {
-                        "type": {"type": "string"},
-                        "description": {"type": "string"},
-                        "direction": {"type": "string", "allowed": ["command", "event"]}
+                        "type": {"type": "string", "required":True},
+                        "description": {"type": "string", "required":True},
+                        "direction": {"type": "string", "allowed": ["command", "event"], "required":True},
+                        "jsonfmt": {"type": "string", "required":True}
                       }
                     }
                   },
@@ -144,6 +145,13 @@ class Project(validator.SchemaDictionary):
       raise Exception(self.validator.errors)
     
     return message
+
+  def init_messages(self, messages):
+    self.value['messages'] = messages
+
+    if not self.validate():
+      raise Exception(self.validator.errors)
+
 
   def remove_message(self, messagetype):
     message = [m for m in self.value['messages'] if m['metadata']['type'] == messagetype][0]

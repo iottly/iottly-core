@@ -418,7 +418,7 @@ class DeviceRegistrationHandler(BaseHandler):
             project = projectmanager.Project(project)
 
             #get board ID
-            board = project.get_board(macaddress)
+            board = project.get_board_by_mac(macaddress)
 
             if not board:
                 #create board ID
@@ -664,7 +664,7 @@ class DeviceCommandHandler(BaseHandler):
             project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
 
-            board = project.get_board(_buuid)
+            board = project.get_board_by_id(_buuid)
             to_jid = board['jid']
 
             params = ujson.loads(self.request.body.decode('utf-8'))

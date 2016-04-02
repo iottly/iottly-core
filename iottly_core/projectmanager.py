@@ -101,7 +101,7 @@ class Project(validator.SchemaDictionary):
     self.value["runinstallercommand"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(self.value["projectgetagenturl"])
 
 
-  def get_board(self, macaddress):
+  def get_board_by_mac(self, macaddress):
     board = None
     if 'boards' in self.value:
       boards = [b for b in self.value['boards'] if b['macaddress'] == macaddress]
@@ -110,6 +110,10 @@ class Project(validator.SchemaDictionary):
         board = boards[0]
 
     return board
+
+  def get_board_by_id(self, buuid):
+    return [b for b in self.value['boards'] if b['ID'] == buuid][0]
+
 
   def add_board(self, macaddress):
     if not "boards" in self.value.keys():
@@ -130,9 +134,6 @@ class Project(validator.SchemaDictionary):
       raise Exception(self.validator.errors)
     
     return board
-
-  def get_board(self, buuid):
-    return [b for b in self.value['boards'] if b['ID'] == buuid][0]
 
   def remove_board(self, macaddress):
     board = [b for b in self.value['boards'] if b['macaddress'] == macaddress][0]

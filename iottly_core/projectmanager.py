@@ -22,6 +22,7 @@ import logging
 
 from iottly_core.settings import settings
 from iottly_core import validator
+from iottly_core import ibcommands
 
 class Project(validator.SchemaDictionary):
   schema = {
@@ -130,6 +131,9 @@ class Project(validator.SchemaDictionary):
     
     return board
 
+  def get_board(self, buuid):
+    return [b for b in self.value['boards'] if b['ID'] == buuid][0]
+
   def remove_board(self, macaddress):
     board = [b for b in self.value['boards'] if b['macaddress'] == macaddress][0]
     self.value['boards'].remove(board) 
@@ -145,6 +149,9 @@ class Project(validator.SchemaDictionary):
       raise Exception(self.validator.errors)
     
     return message
+
+  def get_command(self, cmd_type):
+    return ibcommands.Command.deserialize([cmd for cmd in self.value['messages'] if cmd['metadata']['type'] == cmd_type][0])
 
   def init_messages(self, messages):
     self.value['messages'] = messages

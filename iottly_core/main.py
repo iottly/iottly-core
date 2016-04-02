@@ -655,6 +655,38 @@ class CommandHandler(BaseHandler):
         }))
         self.set_header("Content-Type", "application/json")
 
+class DeviceCommandHandler(BaseHandler):
+    #@tornado.web.authenticated
+    #@permissions.admin_only
+    @gen.coroutine
+    def post(self, _id, _buuid):
+        try:
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+
+            board = project.get_board(_buuid)
+            to_jid = board['jid']
+
+            params = ujson.loads(self.request.body.decode('utf-8'))
+            logging.info(params)
+
+            cmd = project.get_command(params['cmd_type'])
+
+            commander.send_command(cmd.name, to_jid, values=params['values'], cmd=cmd)
+
+            self.write(json_encode({
+                'status': 200,
+            }))
+            self.set_header("Content-Type", "application/json")        
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
+
 
 class SmsHandler(BaseHandler):
     @tornado.web.authenticated
@@ -742,6 +774,7 @@ if __name__ == "__main__":
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/project/([0-9a-fA-F]{24})/messagedefinition/?($|.*)', MessageDefinitionHandler),        
+        (r'/project/([0-9a-fA-F]{24})/device/(.*)/command', DeviceCommandHandler),        
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

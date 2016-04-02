@@ -94,7 +94,7 @@ class Command(object):
     def deserialize(ui_command_def):
         cmd = copy.deepcopy(ui_command_def)
         metadata = cmd.pop('metadata')
-        obj = Command(metadata['type'], metadata['description'], '/json {}'.format(metadata['jsonfmt']))
+        return Command(metadata['type'], metadata['description'], '/json {}'.format(metadata['jsonfmt']))
 
 class CommandWithStandardUI(Command):
     def __init__(self, *args, **kwargs):

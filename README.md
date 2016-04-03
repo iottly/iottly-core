@@ -22,10 +22,17 @@ It performs the following main functions:
 - it receives incoming messages from devices, on `/msg` handler, via the [iottly-httpforward](https://github.com/iottly/iottly-httpforward) plugin installed in [iottly-xmpp-broker](https://github.com/iottly/iottly-xmpp-broker).
 - it sends messages messages to devices, via the [SleekXMPP](https://github.com/fritzy/SleekXMPP) python library, which in turn is connected to the [iottly-xmpp-broker](https://github.com/iottly/iottly-xmpp-broker)
 - it persists incoming messages to the Iottly database which runs on [Mongo](https://github.com/mongodb/mongo).
-- it provides an admin console to the user, to remotely control the devices: [iottly-console](https://github.com/iottly/iottly-console)
-- it pushes messages to the [iottly-console](https://github.com/iottly/iottly-console) in real-time, via websockets
-- it accepts messages from the [iottly-console](https://github.com/iottly/iottly-console), via the `/command` handler and forwards them to remote devices
+- it pushes messages to listening websockets
+- it accepts messages from the user, via the `/command` api handler and forwards them to remote devices
 - it forwards incoming messages to a client service, [iottly-client-core](https://github.com/iottly/iottly-client-core) , via a client callback url configured in `settings.py`.
+
+It exposes a REST API to allow the management of various aspects of an IoT project
+- project creation / editing
+- project based IoT devices registration 
+- IoT messages management (definition and editing of messages to be exchanged with IoT devices on a per project basis)
+- commands API to remotely send messages to the devices
+
+In particular the API is used by [iottly-console](https://github.com/iottly/iottly-console) to provide the user with the tools to create and manage IoT projects.
 
 # Setup instructions
 

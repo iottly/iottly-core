@@ -26,9 +26,9 @@ RUN apt-get install -y python python-dev python-distribute python-pip
 
 RUN mkdir /iottly-core
 
-RUN mkdir /var/iottly-core/
-RUN mkdir /var/iottly-core/uploads/
-RUN mkdir /var/iottly-core/uploads/fw/
+#RUN mkdir /var/iottly-core/
+#RUN mkdir /var/iottly-core/uploads/
+#RUN mkdir /var/iottly-core/uploads/fw/
 
 ADD requirements.txt /iottly-core/requirements.txt
 RUN pip install -r /iottly-core/requirements.txt

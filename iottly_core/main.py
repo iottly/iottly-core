@@ -241,6 +241,7 @@ class MessageHandler(BaseHandler):
         area = fw.get('area', 0)
         block = fw.get('block', 0)
         active_file = fw.get('file', None)
+        active_projectid = fw.get('projectid', None)
 
         if active_file is None or active_file == '':
             commander.send_command('Transfer Complete', from_jid, {
@@ -250,7 +251,7 @@ class MessageHandler(BaseHandler):
             })
             return
 
-        chunks = flashmanager.get_b64_chunks(active_file, dim_chunk)
+        chunks = flashmanager.get_b64_chunks(active_projectid, active_file, dim_chunk)
         for i in range(num_chunks):
             data = chunks[block+i].strip() if block+i < len(chunks) else None
             values = {
@@ -303,7 +304,7 @@ class ProjectHandler(BaseHandler):
             logging.info(write_result)
 
             #add computed data and store them again ... FIX THIS
-            project.set_project_urls()
+            project.set_project_urls_and_paths()
             project.init_messages([cmd.to_ui_command_def() for cmd in ibcommands.commands if cmd.show])
 
             write_result = yield dbapi.update_by_id('projects', project.value["_id"], project.value)

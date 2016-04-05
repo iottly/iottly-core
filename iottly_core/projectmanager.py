@@ -19,6 +19,7 @@ limitations under the License.
 import uuid
 import random
 import logging
+import os
 
 from iottly_core.settings import settings
 from iottly_core import validator
@@ -93,13 +94,14 @@ class Project(validator.SchemaDictionary):
   def __init__(self, value):
     super(Project, self).__init__(value)
 
-  def set_project_urls(self):
+  def set_project_urls_and_paths(self):
     _id = self.value["_id"]
 
     self.value["projecturl"] = settings.PROJECT_URL_TEMPLATE.format(_id)
     self.value["projectgetagenturl"] = settings.GET_AGENT_URL_TEMPLATE.format(_id)
     self.value["runinstallercommand"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(self.value["projectgetagenturl"])
 
+    os.makedirs(os.path.join(settings.FIRMWARE_DIR, str(_id)))
 
   def get_board_by_mac(self, macaddress):
     board = None

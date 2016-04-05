@@ -25,9 +25,6 @@ from iottly_core.settings import settings
 
 file_chunks_cache = {}
 
-directories_map = {
-    '.bin': settings.FIRMWARE_DIR
-}
 
 def _get_md5(path):
     contents = None
@@ -55,8 +52,8 @@ def _get_detailed_file_list(directory, extension):
     files = map(_build_detailed_file_obj, filenames)
     return files
 
-def list_firmwares():
-    return _get_detailed_file_list(settings.FIRMWARE_DIR, '.bin')
+def list_firmwares(projectid):
+    return _get_detailed_file_list(os.path.join(settings.FIRMWARE_DIR, str(projectid)), '.bin')
 
 def generate_chunks_file(file_path, size, chunks_filename):
     chunks = []
@@ -79,14 +76,14 @@ def generate_chunks_file(file_path, size, chunks_filename):
 
     return chunks
 
-def get_b64_chunks(filename, size):
-    base_dir = directories_map.get(filename[-4:])
+def get_b64_chunks(projectid, filename, size):
+    base_dir = os.path.join(settings.FIRMWARE_DIR, str(projectid))
     full_path = os.path.join(base_dir, filename)
 
     if not os.path.isfile(full_path):
         raise IOError("File not found: {}!".format(full_path))
 
-    chunks_filename = '{}_{}.b64'.format(filename[0:-4], size)
+    chunks_filename = '{}_{}_{}.b64'.format(str(projectid), filename, size)
     chunks = file_chunks_cache.get(chunks_filename)
 
     if chunks is None:

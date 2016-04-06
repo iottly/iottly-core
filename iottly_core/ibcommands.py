@@ -141,31 +141,24 @@ commands.extend([
     CommandWithStandardUI('ECHO', 'Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FixedValue", "value": "IOTTLY hello world!!!!"}}),
     CommandWithStandardUI('ECHOList', 'List to Test the board communication with an echo request - response', cmd_properties={"content":{"type": "MultipleChoice", "listvalues": ['Iottly', 'Hello', 'World']}}),
     CommandWithStandardUI('ECHOFree', 'Free value to Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FreeValue"}}),
-    CommandWithStandardUI(
-        'fw', 
-        'Upload and flash a new firmware', 
-        cmd_properties={
-            "startupgrading":{"type": "FixedValue", "value": "1"},
-            "area":{"type": "FixedValue", "value": "0"},
-            "file":{"type": "FreeValue"},
-            "md5":{"type": "FreeValue"},
-            "projectid": {"type": "FreeValue"}
-        }
-    ),
 
-    # CommandWithCustomUI(
-    #     'Upload Firmware',
-    #     'Upload and flash a new firmware',
-    #     '/json {"fw":{"startupgrading":1, "area":0, "file": "", "md5": ""}}',
-    #     warn=True,
-    #     show=False,
-    #     template='flash_fw.html',
-    #     js='flash.js',
-    #     context={
-    #         'area': 0,
-    #         'files': flashmanager.list_firmwares,
-    #         'chooser_text': 'Select a firmware binary...'
-    #     }),
+    # CommandWithStandardUI(
+    #     'fw', 
+    #     'Upload and flash a new firmware', 
+    #     cmd_properties={
+    #         "startupgrading":{"type": "FixedValue", "value": "1"},
+    #         "area":{"type": "FixedValue", "value": "0"},
+    #         "file":{"type": "FreeValue"},
+    #         "md5":{"type": "FreeValue"}
+    #     }
+    # ),
+
+    Command(
+        'Upload Firmware',
+        'Upload and flash a new firmware',
+        '/json {"fw":{"startupgrading":1, "area":0, "file": "", "md5": ""}}',
+        show=False,
+    ),
     Command('Send Chunk', 'Send a b64 encoded data chunk', '/json {"fw":{"area":0,"block":0,"data":"<base64>"}}', show=False),
     Command('Transfer Complete', 'Tell the IB that the upload is complete', '/json {"fw":{"area":0,"block":0}}', show=False),
 ])

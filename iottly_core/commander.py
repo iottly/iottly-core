@@ -90,6 +90,7 @@ def send_command(cmd_name, to, values=None, cmd=None):
 
     if cmd is None:
         raise ValueError('Unknown command [{}]'.format(cmd_name))
+    logging.info('cmd: {}'.format(cmd.to_json(**values)))
     send_message(to, cmd.to_json(**values))
 
 def send_sms_command(cmd_name, to):

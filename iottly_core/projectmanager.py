@@ -39,8 +39,10 @@ class Project(validator.SchemaDictionary):
                 }, 
                 "required": True
               },
+              "secretsalt": {"type": "string"},
               "board":{"type": "string", "allowed": settings.INSTALLER_FILE_PATHS.keys(), "required": True}, 
               "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
+              "fwextension": {"type": "string"},
               "boards": {
                 "type": "list", 
                 "unique": {"key": "macaddress"}, 
@@ -94,7 +96,7 @@ class Project(validator.SchemaDictionary):
   def __init__(self, value):
     super(Project, self).__init__(value)
 
-  def set_project_urls_and_paths(self):
+  def set_project_params(self):
     _id = self.value["_id"]
 
     self.value["projecturl"] = settings.PROJECT_URL_TEMPLATE.format(_id)
@@ -102,6 +104,10 @@ class Project(validator.SchemaDictionary):
     self.value["runinstallercommand"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(self.value["projectgetagenturl"])
 
     os.makedirs(os.path.join(settings.FIRMWARE_DIR, str(_id)))
+
+    self.value["secretsalt"] = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
+    self.value["fwextension"] = 'tar.gz'
+    
 
   def get_board_by_mac(self, macaddress):
     board = None

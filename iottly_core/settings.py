@@ -51,6 +51,8 @@ defaults = dict(
     FIRMWARE_DIR = '/var/iottly-core/uploads/fw/',
 
     SECRET_SALT = 'secrect',
+    FW_PADDING = chr(0x20),
+    FW_CHUNK_SIZE = 1024,
 
     ADMINS = {
     },

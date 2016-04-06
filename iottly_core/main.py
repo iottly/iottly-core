@@ -304,7 +304,7 @@ class ProjectHandler(BaseHandler):
             logging.info(write_result)
 
             #add computed data and store them again ... FIX THIS
-            project.set_project_urls_and_paths()
+            project.set_project_params()
             project.init_messages([cmd.to_ui_command_def() for cmd in ibcommands.commands if cmd.show])
 
             write_result = yield dbapi.update_by_id('projects', project.value["_id"], project.value)
@@ -443,8 +443,11 @@ class DeviceRegistrationHandler(BaseHandler):
                 "IOTTLY_XMPP_DEVICE_USER": board["jid"],
                 "IOTTLY_XMPP_SERVER_HOST": settings.PUBLIC_XMPP_HOST,
                 "IOTTLY_XMPP_SERVER_PORT": settings.PUBLIC_XMPP_PORT,
-                "IOTTLY_XMPP_SERVER_USER": settings.XMPP_USER                    
+                "IOTTLY_XMPP_SERVER_USER": settings.XMPP_USER,
+                "IOTTLY_PROJECT_ID": _id,
+                "IOTTLY_SECRET_SALT": project.value["secretsalt"]
             }
+            logging.info(device_params)
             self.write(json.dumps(device_params, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
@@ -688,6 +691,45 @@ class DeviceCommandHandler(BaseHandler):
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
+class DeviceFlashHandler(BaseHandler):
+    #@tornado.web.authenticated
+    #@permissions.admin_only
+    @gen.coroutine
+    def post(self, _id, _buuid):
+        try:
+            project = yield dbapi.find_one_by_id("projects", _id)
+            project = projectmanager.Project(project)
+
+            board = project.get_board_by_id(_buuid)
+            to_jid = board['jid']
+
+            params = ujson.loads(self.request.body.decode('utf-8'))
+            logging.info(params)
+            filename = params.get("filename", None)
+
+            #get md5
+            firmwares = flashmanager.list_firmwares(_id, project.value['secretsalt'], project.value['fwextension'])
+            md5 = [fw["md5"] for fw in firmwares if fw['filename'] == filename][0]
+
+            #prepare and send command
+            cmd_name = "Upload Firmware"
+            values = {'fw.file': filename, 'fw.md5': md5}
+            cmd = ibcommands.commands_by_name[cmd_name]
+
+            commander.send_command(cmd_name, to_jid, values=values, cmd=cmd)
+
+            self.write(json_encode({
+                'status': 200,
+            }))
+            self.set_header("Content-Type", "application/json")        
+
+        except Exception as e:
+
+            logging.error(e)
+            self.set_status(500)
+            error = {'error': '{}'.format(e)}
+            self.write(json.dumps(error, default=json_util.default))
+            self.set_header("Content-Type", "application/json")
 
 class SmsHandler(BaseHandler):
     @tornado.web.authenticated
@@ -776,6 +818,7 @@ if __name__ == "__main__":
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/project/([0-9a-fA-F]{24})/messagedefinition/?($|.*)', MessageDefinitionHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/command', DeviceCommandHandler),        
+        (r'/project/([0-9a-fA-F]{24})/device/(.*)/flashfw', DeviceFlashHandler),        
         (r'/file', FileUploadHandler),
         (r'/command', CommandHandler),
         (r'/sms', SmsHandler),

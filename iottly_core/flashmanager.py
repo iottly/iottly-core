@@ -20,25 +20,26 @@ import hashlib
 import os
 
 from datetime import datetime
+import logging
 
 from iottly_core.settings import settings
 
 file_chunks_cache = {}
 
 
-def _get_md5(path):
+def _get_md5(path, secret):
+
     contents = None
-    with open(path) as f:
+    with open(path, "rb") as f:
         contents = f.read()
 
-    while len(contents) % 1024:
-        contents += chr(0xFF)
+    while len(contents) % settings.FW_CHUNK_SIZE:
+        contents += settings.FW_PADDING
 
-    contents += settings.SECRET_SALT
-
+    contents += bytearray(secret, 'utf-8')
     return hashlib.md5(contents).hexdigest()
 
-def _get_detailed_file_list(directory, extension):
+def _get_detailed_file_list(directory, secret, extension):
     filenames = filter(lambda f: f.endswith(extension), os.listdir(directory))
     def _build_detailed_file_obj(filename):
         path = os.path.join(directory, filename)
@@ -46,14 +47,14 @@ def _get_detailed_file_list(directory, extension):
             filename=filename,
             lastmodified=datetime.fromtimestamp(os.path.getmtime(path)),
             size=os.path.getsize(path),
-            md5=_get_md5(path)
+            md5=_get_md5(path, secret)
             )
 
     files = map(_build_detailed_file_obj, filenames)
     return files
 
-def list_firmwares(projectid):
-    return _get_detailed_file_list(os.path.join(settings.FIRMWARE_DIR, str(projectid)), '.bin')
+def list_firmwares(projectpath, secret, extension):
+    return _get_detailed_file_list(os.path.join(settings.FIRMWARE_DIR, projectpath), secret, extension)
 
 def generate_chunks_file(file_path, size, chunks_filename):
     chunks = []
@@ -64,11 +65,11 @@ def generate_chunks_file(file_path, size, chunks_filename):
                 break
             # Padding the chunk with ones
             if len(chunk) < size:
-                chunk += chr(0xFF) * (size - len(chunk))
+                chunk += settings.FW_PADDING * (size - len(chunk))
             chunks.append(base64.b64encode(chunk))
 
-    while len(chunks) % (1024 / size):
-        chunks.append(base64.b64encode(chr(0xFF) * size))
+    while len(chunks) % (settings.FW_CHUNK_SIZE / size):
+        chunks.append(base64.b64encode(settings.FW_PADDING * size))
 
     with open(chunks_filename, 'w') as f:
         for chunk in chunks:
@@ -76,14 +77,14 @@ def generate_chunks_file(file_path, size, chunks_filename):
 
     return chunks
 
-def get_b64_chunks(projectid, filename, size):
-    base_dir = os.path.join(settings.FIRMWARE_DIR, str(projectid))
+def get_b64_chunks(projectpath, filename, size):
+    base_dir = os.path.join(settings.FIRMWARE_DIR, projectpath)
     full_path = os.path.join(base_dir, filename)
 
     if not os.path.isfile(full_path):
         raise IOError("File not found: {}!".format(full_path))
 
-    chunks_filename = '{}_{}_{}.b64'.format(str(projectid), filename, size)
+    chunks_filename = '{}_{}_{}.b64'.format(projectpath, filename, size)
     chunks = file_chunks_cache.get(chunks_filename)
 
     if chunks is None:

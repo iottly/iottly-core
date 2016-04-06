@@ -60,6 +60,11 @@ types_map = {
     'fw': 'Firmware',
 }
 
+dont_persist_keys = [
+    'fw',
+    'sync'
+]
+
 def _convert_code(k, v, d):
     del d[k]
     d['tdcode'] = codes_dict[v]
@@ -142,5 +147,4 @@ def check_message_forward(msg):
     return True #change this to False to prevent forwarding of all but messages listed in forwarding_set
 
 def check_persist(msg):
-    is_sync = 'sync' in msg
-    return not is_sync
+    return not any(key in msg for key in dont_persist_keys)

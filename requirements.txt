@@ -16,3 +16,4 @@ wsgiref==0.1.2
 cerberus
 prettysettings
 hashids==1.1.0
+Jinja2

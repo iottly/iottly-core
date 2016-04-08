@@ -86,6 +86,9 @@ defaults = dict(
     #repo for devices' installers
     DEVICE_INSTALLERS_REPO_PATH = '/iottly-device-agent-py-installers',
 
+    #repo for devices' fw template
+    DEVICE_FW_SNIPPET_TPL_REPO_PATH = '/fw-snippet-tpl',
+
     BOARDS_TYPE_MAP = {
         'Raspberry Pi': 'raspberry-pi', 
         'Dev Docker Device': 'dev-docker-device'
@@ -133,7 +136,14 @@ cshooks = OrderedDict([
                 settings.BOARDS_TYPE_MAP[k],
                 settings.INSTALLER_FILENAME) 
             for k in settings.BOARDS_TYPE_MAP.keys()
-        })
+        }),
+    ('FW_SNIPPET_TPL_FILE_PATHS', lambda settings: {
+            k: os.path.join(
+                settings.DEVICE_FW_SNIPPET_TPL_REPO_PATH,
+                settings.BOARDS_TYPE_MAP[k]) 
+            for k in settings.BOARDS_TYPE_MAP.keys()
+        }),
+
 
 ])
 

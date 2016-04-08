@@ -24,6 +24,7 @@ import os
 from iottly_core.settings import settings
 from iottly_core import validator
 from iottly_core import ibcommands
+from iottly_core import fwcodemanager
 
 class Project(validator.SchemaDictionary):
   schema = {
@@ -90,13 +91,35 @@ class Project(validator.SchemaDictionary):
                     }
                   }                  
                 }
-              }  
+              },
+              "fwcode": {
+                "type": "dict", 
+                "schema": {
+                  "snippets": {
+                    "type": "list", 
+                    "unique": {"key": "snippetid"}, 
+                    "schema": {
+                      "type": "dict", 
+                      "schema": {
+                        "name": {"type": "string"},
+                        "category": {"type": "string"},
+                        "description": {"type": "string"},
+                        "snippetid": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
+                        "code": {"type": "string"}
+                      }, 
+                      "required": True                  
+                    }
+                  }      
+                }                            
+              }
             }
 
   def __init__(self, value):
     super(Project, self).__init__(value)
 
-  def set_project_params(self):
+    self.fwcode = fwcodemanager.FwCode(self.value, self.value["board"])
+
+  def set_project_params(self, commands):
     _id = self.value["_id"]
 
     self.value["projecturl"] = settings.PROJECT_URL_TEMPLATE.format(_id)
@@ -107,6 +130,9 @@ class Project(validator.SchemaDictionary):
 
     self.value["secretsalt"] = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
     self.value["fwextension"] = 'tar.gz'
+
+    self.init_messages(commands)
+    self.fwcode.createbasesnippets()
     
 
   def get_board_by_mac(self, macaddress):

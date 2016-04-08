@@ -1,0 +1,6 @@
+FROM ubuntu:latest
+MAINTAINER iottly
+
+
+RUN mkdir /fw-snippet-tpl
+ADD /fw-snippet-tpl /fw-snippet-tpl

@@ -49,6 +49,9 @@ defaults = dict(
 
     # Filesystem binaries (FW/NN)
     FIRMWARE_DIR = '/var/iottly-core/uploads/fw/',
+    CODEREPO_DIR = '/var/iottly-core/coderepo/',    
+    USERDEFINEDFWPACKAGE_PATH = 'userpackage',
+    USERDEFINEDFW_FILENAME = 'userdefinedfw.py',
 
     SECRET_SALT = 'secrect',
     FW_PADDING = chr(0x20),

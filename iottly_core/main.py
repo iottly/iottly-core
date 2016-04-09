@@ -713,12 +713,18 @@ class DeviceFlashHandler(BaseHandler):
             board = project.get_board_by_id(_buuid)
             to_jid = board['jid']
 
-            params = ujson.loads(self.request.body.decode('utf-8'))
+            params = {} 
+            reqbody = self.request.body.decode('utf-8')
+            if reqbody:
+                ujson.loads(reqbody)
             logging.info(params)
             filename = params.get("filename", None)
 
-            #get md5
+            if not filename:
+                filename = project.fwcode.generateFullFw()
+            
             firmwares = flashmanager.list_firmwares(_id, project.value['secretsalt'], project.value['fwextension'])
+            #get md5
             md5 = [fw["md5"] for fw in firmwares if fw['filename'] == filename][0]
 
             #prepare and send command

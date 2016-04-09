@@ -1,9 +1,11 @@
+import os
 import uuid
 import random
 import logging
 import os
 from jinja2 import FileSystemLoader, Environment, Template
 import datetime
+import tarfile
 
 from iottly_core.settings import settings
 
@@ -16,6 +18,7 @@ class FwCode():
     self.templateLoader = FileSystemLoader( searchpath=settings.FW_SNIPPET_TPL_FILE_PATHS[board] )
     self.templateEnv = Environment( loader=self.templateLoader )
 
+  staticsnippets = ["global", "init", "loop"]
 
   basesnippets = [
     {
@@ -55,7 +58,7 @@ class FwCode():
     if "fwcode" not in self.value.keys():
       self.value["fwcode"] = {"snippets": snippets}
 
-    for bn in [bn for bn in self.basesnippets if bn["name"] in ["global", "init", "loop"]]:
+    for bn in [bn for bn in self.basesnippets if bn["name"] in self.staticsnippets]:
       template = self.templateEnv.get_template( bn["template"] )
 
       templateVars = { 
@@ -144,5 +147,55 @@ class FwCode():
     snippet["code"] = outputText
 
 
+  def generateFullFw(self):
+
+    # access project fw folder
+    # create workdir tree
+    # create fwdir tree inside workdir
+
+    temppath = str(uuid.uuid4())
+    workdir = os.path.join(settings.CODEREPO_DIR, str(self.value["_id"]), temppath)
+    packagedir = os.path.join(workdir, settings.USERDEFINEDFWPACKAGE_PATH)
+    os.makedirs(packagedir)
+
+    uploaddir = os.path.join(settings.FIRMWARE_DIR, str(self.value["_id"]))
+
+    logging.info("workdir: {}".format(workdir))
+    logging.info("packagedir: {}".format(packagedir))
+    logging.info("uploaddir: {}".format(uploaddir))
+    
+
+    # generate code inside fwdir tree
+    template = self.templateEnv.get_template( "userdefinedfw.tpl.py" )
+    templateVars = { 
+      "date" : datetime.datetime.now(),
+      "projectname": self.value["name"]
+    }
+
+    templateVars.update({
+      sn["name"]: sn["code"] 
+      for sn in self.value["fwcode"]["snippets"] 
+      if sn["name"] in self.staticsnippets
+    })
+
+    templateVars["cmdsnippets"] = [
+      sn for sn in self.value["fwcode"]["snippets"] 
+      if sn["category"] == "Command handlers"
+    ]
+
+    outputText = template.render( templateVars )
+
+    with open(os.path.join(packagedir, settings.USERDEFINEDFW_FILENAME), "wb") as fh:
+      fh.write(outputText)
+
+    # produce tar.gz inside workdir tree
+    archivefile = "{}.{}".format(temppath, self.value["fwextension"])
+    archive = os.path.join(uploaddir, archivefile)
+    with tarfile.open(archive, "w:gz") as tar:
+      tar.add(packagedir, arcname=os.path.basename(packagedir))
+
+    # return path of tar.gz
+    return archivefile
+    
 
 

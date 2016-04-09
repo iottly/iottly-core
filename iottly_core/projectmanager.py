@@ -179,6 +179,7 @@ class Project(validator.SchemaDictionary):
       self.value["messages"] = []
 
     self.value["messages"].append(message)
+    self.fwcode.createMsgSnippet(message, self.value["fwcode"]["snippets"])
 
     if not self.validate():
       raise Exception(self.validator.errors)
@@ -198,6 +199,7 @@ class Project(validator.SchemaDictionary):
   def remove_message(self, messagetype):
     message = [m for m in self.value['messages'] if m['metadata']['type'] == messagetype][0]
     self.value['messages'].remove(message) 
+    self.fwcode.setMsgSnippetZombie(message)
     return message
 
 """

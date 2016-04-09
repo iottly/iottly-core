@@ -107,3 +107,42 @@ class FwCode():
     )
 
     logging.info(outputText)
+
+
+  def setMsgSnippetZombie(self, msg):
+    snippets = self.value["fwcode"]["snippets"]
+    metadata = msg["metadata"]
+    msgtype = metadata["type"]
+
+    def nextzombiename(msgtype, snippets, firstsnippet= None):
+
+      _snippets = [sn for sn in snippets if sn["name"] == msgtype]
+      if len(_snippets) == 1:
+        snippet = _snippets[0]
+        if not firstsnippet:
+          firstsnippet = snippet
+        next_zombie_name = "_{}".format(snippet["name"])
+        return nextzombiename(next_zombie_name, snippets, firstsnippet)
+      elif len(_snippets) == 0:
+        return (firstsnippet, msgtype)
+
+    snippet, next_zombie_name = nextzombiename(msgtype, snippets)
+    
+    logging.info(next_zombie_name)
+
+
+    defstatement = "def {}(command):"
+    template = self.templateEnv.get_template( "zombiecommandhandler.tpl.py" )
+    templateVars = { 
+      "type" : msgtype,
+      "body": snippet["code"].replace(defstatement.format(msgtype), defstatement.format(next_zombie_name))
+    }
+    outputText = template.render( templateVars )
+
+    snippet["name"] = next_zombie_name
+    snippet["description"] = next_zombie_name    
+    snippet["code"] = outputText
+
+
+
+

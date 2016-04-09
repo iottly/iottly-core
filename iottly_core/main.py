@@ -511,7 +511,11 @@ class MessageDefinitionHandler(BaseHandler):
 
             message = project.add_message(message)
             
-            write_result = yield dbapi.update_by_id('projects', _id, {"messages": project.value["messages"]})
+            write_result = yield dbapi.update_by_id('projects', _id, 
+                {
+                    "messages": project.value["messages"],
+                    "fwcode": project.value["fwcode"]
+                })
             logging.info(write_result)
 
             self.set_status(200)
@@ -540,7 +544,10 @@ class MessageDefinitionHandler(BaseHandler):
             project.remove_message(message['metadata']['type'])
             message = project.add_message(message)
             
-            write_result = yield dbapi.update_by_id('projects', _id, {"messages": project.value["messages"]})
+            write_result = yield dbapi.update_by_id('projects', _id, {
+                "messages": project.value["messages"],
+                "fwcode": project.value["fwcode"],
+            })
             logging.info(write_result)
 
             self.set_status(200)
@@ -567,7 +574,10 @@ class MessageDefinitionHandler(BaseHandler):
 
             logging.info('remove message: {}'.format(message))
 
-            write_result = yield dbapi.update_by_id('projects', _id, {"messages": project.value["messages"]})
+            write_result = yield dbapi.update_by_id('projects', _id, {
+                "messages": project.value["messages"],
+                "fwcode": project.value["fwcode"],
+            })
             logging.info(write_result)
 
             self.set_status(200)

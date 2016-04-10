@@ -26,7 +26,7 @@ class FwCode():
       "category": "Init sections",
       "description": "Import and globals",
       "template": "global.tpl.py",
-      "body": "import os"
+      "body": ""
     },
     {
       "name": "init",

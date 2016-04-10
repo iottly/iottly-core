@@ -274,7 +274,13 @@ class MessageHandler(BaseHandler):
             'chunks_sent': block + num_chunks if data else len(chunks)
         }
 
-        self._broadcast(ujson.dumps(progress_msg))
+        self._broadcast_interface(progress_msg)
+
+    def _broadcast_interface(self, msg):
+        devices_json = json.dumps({ 'interface': msg }, default=json_util.default)
+        for client in connected_clients:
+            logging.info(client)
+            client.send(devices_json)
 
     def _process_msgs(self, msgs):
         for msg in msgs:

@@ -87,8 +87,9 @@ defaults = dict(
 
 
     #repo for devices' installers
-    DEVICE_INSTALLERS_REPO_PATH = '/iottly-device-agent-py-installers',
-
+    DEVICE_INSTALLERS_BUILDER_PATH = '/iottly-device-agent-py-installers/installer-builders',
+    DEVICE_INSTALLERS_REPO_PATH = '/iottly-device-agent-py-installers/installer-project-repos',
+    DEVICE_INSTALLER_NAME_TEMPLATE = '{}-iottlyagentinstaller.bsx',
     #repo for devices' fw template
     DEVICE_FW_SNIPPET_TPL_REPO_PATH = '/fw-snippet-tpl',
 

@@ -31,6 +31,7 @@ import ujson
 import unicodedata
 import urllib
 import urlparse
+import shutil
 
 from bson import json_util
 from bson.objectid import ObjectId
@@ -362,9 +363,23 @@ class ProjectHandler(BaseHandler):
             project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
             logging.info(project.value)
+
+            #remove registered boards from broker
             if "boards" in project.value.keys():
                 for board in project.value["boards"]:
                     apiresult = yield brokerapi.delete_user(board["ID"])
+
+            #remove over the air fw repo path:
+            fwdir = os.path.join(settings.FIRMWARE_DIR, str(_id))
+            if os.path.exists(fwdir):
+                shutil.rmtree(fwdir)
+            
+            #remove installer:
+            installerdir = os.path.join(
+                settings.DEVICE_INSTALLERS_REPO_PATH, 
+                settings.DEVICE_INSTALLER_NAME_TEMPLATE.format(str(_id)))
+            if os.path.exists(installerdir):
+                os.remove(installerdir)
 
             delete_result = yield dbapi.remove_by_id('projects', _id)
             logging.info(delete_result)
@@ -602,17 +617,13 @@ class MessageDefinitionHandler(BaseHandler):
 class GetAgentHandler(BaseHandler):
     @gen.coroutine
     def get(self, _id):
-        project = yield dbapi.find_one_by_id("projects", _id)
-        project = projectmanager.Project(project)
+        filename = settings.DEVICE_INSTALLER_NAME_TEMPLATE.format(str(_id))
+        installerdir = os.path.join(settings.DEVICE_INSTALLERS_REPO_PATH, filename)
 
-        with open(settings.INSTALLER_FILE_PATHS[project.value["board"]], "r") as f:
-            installer = f.read().format(
-                IOTTLY_REGISTRATION_HOST=settings.PUBLIC_HOST_PORT, 
-                IOTTLY_REGISTRATION_SERVICE=settings.DEVICEREGISTRATION_SERVICE_TEMPLATE.format(_id)
-                )
-            self.write(installer)
+        with open(installerdir, "rb") as f:
+            self.write(f.read())
             #self.set_header("Content-Type", "application/text")
-            self.set_header('Content-Disposition', 'attachment; filename="installer.sh"')
+            self.set_header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
 
             
 

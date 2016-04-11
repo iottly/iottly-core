@@ -20,6 +20,7 @@ import uuid
 import random
 import logging
 import os
+import subprocess
 
 from iottly_core.settings import settings
 from iottly_core import validator
@@ -126,10 +127,22 @@ class Project(validator.SchemaDictionary):
     self.value["projectgetagenturl"] = settings.GET_AGENT_URL_TEMPLATE.format(_id)
     self.value["runinstallercommand"] = settings.RUN_INSTALLER_COMMAND_TEMPLATE.format(self.value["projectgetagenturl"])
 
+    #create repo path for over the air firmwares
     os.makedirs(os.path.join(settings.FIRMWARE_DIR, str(_id)))
 
+    # add over the air parameters
     self.value["secretsalt"] = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
     self.value["fwextension"] = 'tar.gz'
+
+    #create base installer for devices
+    builder = [] 
+    builder.append(os.path.join(settings.DEVICE_INSTALLERS_BUILDER_PATH, "build"))
+    builder.append(settings.BOARDS_TYPE_MAP[self.value["board"]])             # export BOARDDIR=$1                    
+    builder.append("{}".format(_id))                                          # export PROJID=$2                      
+    builder.append(settings.PUBLIC_HOST_PORT)                                 # export IOTTLY_REGISTRATION_HOST=$3    
+    builder.append(settings.DEVICEREGISTRATION_SERVICE_TEMPLATE.format(_id))  # export IOTTLY_REGISTRATION_SERVICE=$4  
+
+    subprocess.check_call(builder)
 
     self.init_messages(commands)
     self.fwcode.createbasesnippets()

@@ -126,9 +126,6 @@ class FwCode():
       }
     )
 
-    logging.info(outputText)
-
-
   def setMsgSnippetZombie(self, msg):
     snippets = self.value["fwcode"]["snippets"]
     metadata = msg["metadata"]

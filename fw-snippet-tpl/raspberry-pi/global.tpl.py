@@ -2,6 +2,7 @@
 
 import time
 import multiprocessing
+import RPi.GPIO
 
 from iottly.iottlyagent import send_msg
 

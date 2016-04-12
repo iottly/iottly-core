@@ -8,9 +8,11 @@ def loop():
 
   #-----------------------------------------------------------------------------#
   # for example purpose
-  # this is a message the device will send forever
-  # remove this line for real purposes
-  send_msg({"looptest": {"timermessage": 1}})
+  # remove this for real purposes
+  # the message is sent depending on examplecommandstatus value
+  # which can be sending the predefined examplecommand
+  if examplecommandstatus.value:
+    send_msg({"looptest": {"timermessage": 1}})
   #-----------------------------------------------------------------------------#
 
   #-----------------------------------------------------------------------------#

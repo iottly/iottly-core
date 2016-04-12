@@ -8,9 +8,12 @@ def loop():
 
   #-----------------------------------------------------------------------------#
   # for example purpose
-  # this is a message the device will send forever
-  # remove this line for real purposes
-  send_msg({"looptest": {"timermessage": 1}})
+  # remove this for real purposes
+  # pin 2 status is read from board and sent to iottly
+  # pin status can be changed by issuing predefined examplecommand
+  pin = "2"
+  pinstatus = GPIO.input(int(pin))
+  send_msg({"looptest": {"pinstatus": pinstatus}})
   #-----------------------------------------------------------------------------#
 
   #-----------------------------------------------------------------------------#

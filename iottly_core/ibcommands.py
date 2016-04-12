@@ -138,9 +138,8 @@ sms_commands = list()
 sms_commands_by_name = dict()
 
 commands.extend([
-    CommandWithStandardUI('ECHO', 'Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FixedValue", "value": "IOTTLY hello world!!!!"}}),
-    CommandWithStandardUI('ECHOList', 'List to Test the board communication with an echo request - response', cmd_properties={"content":{"type": "MultipleChoice", "listvalues": ['Iottly', 'Hello', 'World']}}),
-    CommandWithStandardUI('ECHOFree', 'Free value to Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FreeValue"}}),
+    CommandWithStandardUI('echo', 'Test the board communication with an echo request - response', cmd_properties={"content":{"type": "FixedValue", "value": "IOTTLY hello world!!!!"}}),
+    CommandWithStandardUI('examplecommand', 'example command to control the behaviour of the device loop', cmd_properties={"status":{"type": "MultipleChoice", "listvalues": ['start', 'stop']}}),
 
     # CommandWithStandardUI(
     #     'fw', 

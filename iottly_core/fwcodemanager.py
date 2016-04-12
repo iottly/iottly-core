@@ -35,7 +35,16 @@ class FwCode():
     self.templateLoader = FileSystemLoader( searchpath=settings.FW_SNIPPET_TPL_FILE_PATHS[board] )
     self.templateEnv = Environment( loader=self.templateLoader )
 
-  staticsnippets = ["global", "init", "loop"]
+    self.staticsnippets = self.staticsnippetsmap[board]
+
+  staticsnippetsmap = {
+        'Raspberry Pi': ["global", "init", "loop", "GPIOHandler"], 
+        'Dev Docker Device': ["global", "init", "loop"]
+        }
+
+  examplecommandtemplates = {
+    'examplecommand': 'examplecommandhandler.tpl.py'
+  }    
 
   basesnippets = [
     {
@@ -50,7 +59,7 @@ class FwCode():
       "category": "Init sections",
       "description": "Init function",
       "template": "init.tpl.py",
-      "body": "pass"
+      "body": ""
     },
     {
       "name": "loop",
@@ -108,7 +117,11 @@ class FwCode():
     metadata = msg["metadata"]
     bn = [bn for bn in self.basesnippets if bn["name"] == "command"][0]
 
-    template = self.templateEnv.get_template( bn["template"] )
+    if metadata["type"] in self.examplecommandtemplates:
+      #load example template for specific commands
+      template = self.templateEnv.get_template( self.examplecommandtemplates[metadata["type"]] )
+    else:
+      template = self.templateEnv.get_template( bn["template"] )
 
     templateVars = { 
       "comment" : "generated on {}".format(datetime.datetime.now())

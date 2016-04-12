@@ -13,7 +13,7 @@ def {{ type }}(command):
   #-----------------------------------------------------------------------------#
   # example code to set GPIO Pins
   # https://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/
-  pin = "2"
+  pin = "3"
   status = cmdpars["status"] == "start"
   GPIO.output(int(pin),status)
 

@@ -140,7 +140,8 @@ class Project(validator.SchemaDictionary):
     builder.append(settings.BOARDS_TYPE_MAP[self.value["board"]])             # export BOARDDIR=$1                    
     builder.append("{}".format(_id))                                          # export PROJID=$2                      
     builder.append(settings.PUBLIC_HOST_PORT)                                 # export IOTTLY_REGISTRATION_HOST=$3    
-    builder.append(settings.DEVICEREGISTRATION_SERVICE_TEMPLATE.format(_id))  # export IOTTLY_REGISTRATION_SERVICE=$4  
+    builder.append(settings.DEVICEREGISTRATION_SERVICE_TEMPLATE.format(_id))  # export IOTTLY_REGISTRATION_SERVICE=$4 
+    builder.append(settings.IOTTLY_REGISTRATION_PROTOCOL)                     # export IOTTLY_REGISTRATION_PROTOCOL=$5 
 
     subprocess.check_call(builder)
 

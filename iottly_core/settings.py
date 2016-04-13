@@ -73,7 +73,7 @@ defaults = dict(
     #HTTP:
     API_VERSION='v1.0',
     PUBLIC_HOST='127.0.0.1',
-    PUBLIC_HOST_PORT_PATTERN='{}:8550',
+    PUBLIC_HOST_PORT_PATTERN='',
     PUBLIC_URL_PATTERN = 'http://{}/{}',
 
     PROJECT_URL_PATTERN = '{}/admin/{}',
@@ -87,6 +87,7 @@ defaults = dict(
 
 
     #repo for devices' installers
+    IOTTLY_REGISTRATION_PROTOCOL = 'https',
     DEVICE_INSTALLERS_BUILDER_PATH = '/iottly-device-agent-py-installers/installer-builders',
     DEVICE_INSTALLERS_REPO_PATH = '/iottly-device-agent-py-installers/installer-project-repos',
     DEVICE_INSTALLER_NAME_TEMPLATE = '{}-iottlyagentinstaller.bsx',

@@ -846,7 +846,7 @@ if __name__ == "__main__":
     application = tornado.web.Application(
       MessagesRouter.urls +
       [
-        (r'/project/?($|[0-9a-fA-F]{24})', ProjectHandler),
+        (r'/project/([0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/project/([0-9a-fA-F]{24})/messagedefinition/?($|.*)', MessageDefinitionHandler),        

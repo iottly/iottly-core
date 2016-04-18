@@ -408,6 +408,8 @@ class ProjectHandler(BaseHandler):
                 self.write(json.dumps(project.value, default=json_util.default))
                 self.set_header("Content-Type", "application/json")
             else:
+                raise Exception("Access forbidden to full project list")
+                
                 projects = yield dbapi.find_all("projects", sort=[('name', pymongo.ASCENDING)], limit=10)
                 logging.info(projects)
                 projects_val = []
@@ -846,7 +848,7 @@ if __name__ == "__main__":
     application = tornado.web.Application(
       MessagesRouter.urls +
       [
-        (r'/project/([0-9a-fA-F]{24})', ProjectHandler),
+        (r'/project/?($|[0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
         (r'/project/([0-9a-fA-F]{24})/getagent', GetAgentHandler),
         (r'/project/([0-9a-fA-F]{24})/messagedefinition/?($|.*)', MessageDefinitionHandler),        

@@ -11,6 +11,7 @@ from iottly.iottlyagent import send_msg
 # for example this variable affect the execution of the loop function
 # while it can be set by issuing the predefined examplecommand
 
-examplecommandstatus = multiprocessing.Value('b', False)
+#examplecommandstatus = multiprocessing.Value('b', False)
+# to set or get variable value: examplecommandstatus.value
 
 {{ body }}

@@ -9,11 +9,12 @@ def loop():
   #-----------------------------------------------------------------------------#
   # for example purpose
   # remove this for real purposes
-  # pin 2 status is read from board and sent to iottly
+  # pin 3 status is read from board and sent to iottly if True
   # pin status can be changed by issuing predefined examplecommand
   pin = "3"
   pinstatus = GPIO.input(int(pin))
-  send_msg({"looptest": {"pinstatus": pinstatus}})
+  if pinstatus:
+    send_msg({"looptest": {"pinstatus": pinstatus}})
   #-----------------------------------------------------------------------------#
 
   #-----------------------------------------------------------------------------#

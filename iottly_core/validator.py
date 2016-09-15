@@ -45,6 +45,6 @@ class IottlyValidators(cerberus.Validator):
                 self._error(field, "elements must be unique based on metadata.type")
 
 
-    def _validate_type_objectid(self, field, value):
-        if not type(value) == ObjectId: 
-            self._error(field, 'Type error. Mongo ObjectId type is required.')
+    def _validate_type_objectid(self, value):
+        if type(value) == ObjectId: 
+            return True

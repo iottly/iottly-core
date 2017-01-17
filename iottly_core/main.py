@@ -46,7 +46,7 @@ from sockjs.tornado import SockJSRouter, SockJSConnection
 
 from iottly_core.util import module_to_dict, extract_request_dict
 
-from iottly_core import commander
+from iottly_core import polyglot
 from iottly_core import ibcommands
 from iottly_core.settings import settings
 from iottly_core import messageparser
@@ -61,11 +61,31 @@ from iottly_core.settings import settings
 
 logging.getLogger().setLevel(logging.DEBUG)
 
-
-xmpp_process = commander.init(settings.XMPP_USER, settings.XMPP_PASSWORD)
+backendbrokerclientconf = {
+                            'BackendBrokerClientXmpp': {
+                                                    'key':'xmpp', 
+                                                    'class_name':'BackEndBrokerClientXMPP',
+                                                    'communicationconf': {
+                                                                        'user':settings.XMPP_USER,
+                                                                        'password':settings.XMPP_PASSWORD,
+                                                                        'server':settings.XMPP_SERVER           
+                                                                        }
+                                                    },
+                            'BackendBrokerClientMqtt': {
+                                                    'key':'mqtt', 
+                                                    'class_name':'BackEndBrokerClientMQTT',
+                                                    'communicationconf': {
+                                                                        'server':settings.IOTTLY_MQTT_SERVER,
+                                                                        'port':settings.IOTTLY_MQTT_PORT,
+                                                                        'user':settings.IOTTLY_MQTT_DEVICE_USER,
+                                                                        'password':settings.IOTTLY_MQTT_DEVICE_PASSWORD,
+                                                                        'tpc_sub':settings.IOTTLY_MQTT_TOPIC_SUBSCRIBE,
+                                                                        'tpc_pub':settings.IOTTLY_MQTT_TOPIC_PUBLISH         
+                                                                        }
+                                                    }
+                            }
+brokers_polyglot=polyglot.Polyglot(backendbrokerclientconf)
 connected_clients = set()
-
-
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -228,7 +248,7 @@ class MessageHandler(BaseHandler):
         raise gen.Return(res)
 
     def set_time(self, msg):
-        commander.send_command('timeset', msg['from'])
+        brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'timeset', msg['from'])
 
     def send_firmware_chunks(self, msg):
         fw = msg.get('fw')
@@ -245,7 +265,7 @@ class MessageHandler(BaseHandler):
         active_projectid = fw.get('projectid', None)
 
         if active_file is None or active_file == '':
-            commander.send_command('Transfer Complete', from_jid, {
+            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'Transfer Complete', from_jid, {
                 'fw.area': area,
                 'fw.block': block,
                 'fw.file': active_file,
@@ -261,11 +281,11 @@ class MessageHandler(BaseHandler):
                 'fw.file': active_file,
             }
             if data is None:
-                commander.send_command('Transfer Complete', from_jid, values)
+                brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'Transfer Complete', from_jid, values)
                 break
             else:
                 values['fw.data'] = data
-                commander.send_command('Send Chunk', from_jid, values)
+                brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'Send Chunk', from_jid, values)
 
         progress_msg = {
             'type': 'progress',
@@ -460,6 +480,7 @@ class DeviceRegistrationHandler(BaseHandler):
             #allways return board ID in case the board has been re-installed but was already registered
             device_params = {
 
+                "IOTTLY_IOT_PROTOCOL":"xmpp",
                 "IOTTLY_XMPP_DEVICE_PASSWORD": board["password"],
                 "IOTTLY_XMPP_DEVICE_USER": board["jid"],
                 "IOTTLY_XMPP_SERVER_HOST": settings.PUBLIC_XMPP_HOST,
@@ -675,7 +696,7 @@ class CommandHandler(BaseHandler):
         values = extract_request_dict(self.request, 'values')
         logging.info('---' + str(values))
         try:
-            commander.send_command(command_name, to_jid, values)
+            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, command_name, to_jid, values)
         except ValueError, e:
             return self.write({
                 'status': 400,
@@ -703,7 +724,7 @@ class DeviceCommandHandler(BaseHandler):
 
             cmd = project.get_command(params['cmd_type'])
 
-            commander.send_command(cmd.name, to_jid, values=params['values'], cmd=cmd)
+            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, cmd.name, to_jid, values=params['values'], cmd=cmd)
 
             self.write(json_encode({
                 'status': 200,
@@ -749,7 +770,7 @@ class DeviceFlashHandler(BaseHandler):
             values = {'fw.file': filename, 'fw.md5': md5}
             cmd = ibcommands.commands_by_name[cmd_name]
 
-            commander.send_command(cmd_name, to_jid, values=values, cmd=cmd)
+            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, cmd_name, to_jid, values=values, cmd=cmd)
 
             self.write(json_encode({
                 'status': 200,
@@ -835,8 +856,7 @@ class MainHandler(BaseHandler):
 
 
 def shutdown():
-    if xmpp_process:
-        xmpp_process.terminate()
+    brokers_polyglot.terminate()
 
 if __name__ == "__main__":
     MessagesRouter = SockJSRouter(MessagesConnection, '/messageChannel')

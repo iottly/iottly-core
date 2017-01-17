@@ -17,3 +17,4 @@ cerberus
 prettysettings
 hashids==1.1.0
 Jinja2
+paho-mqtt==1.2

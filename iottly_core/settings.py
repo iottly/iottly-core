@@ -32,6 +32,14 @@ defaults = dict(
     # python iso format stringtom
     TIME_FMT = "%Y-%m-%dT%H:%M:%S",
 
+    # MQTT Client settings
+    IOTTLY_MQTT_SERVER = '192.168.1.185',
+    IOTTLY_MQTT_PORT = '1883',
+    IOTTLY_MQTT_DEVICE_USER = 'iottlycore',
+    IOTTLY_MQTT_DEVICE_PASSWORD = 'pippo',
+    IOTTLY_MQTT_TOPIC_SUBSCRIBE = 'publish_tpc',
+    IOTTLY_MQTT_TOPIC_PUBLISH = 'subscription_tpc',         
+
     # XMPP Client settings
     XMPP_HOST = 'xmppbroker',
     XMPP_PORT = 5222,
@@ -81,10 +89,12 @@ defaults = dict(
     RUN_INSTALLER_COMMAND_TEMPLATE = 'wget -O - {} | bash',
     DEVICEREGISTRATION_SERVICE_PATTERN = '/{}/project/{}/deviceregistration',
 
+    #COMMUNICATION_PROTOCOL
+    IOTTLY_IOT_PROTOCOL = 'mqtt',
+
     #XMPP:
     PUBLIC_XMPP_HOST='127.0.0.1',
     PUBLIC_XMPP_PORT = 5222,
-
 
     #repo for devices' installers
     IOTTLY_REGISTRATION_PROTOCOL = 'https',

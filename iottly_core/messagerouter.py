@@ -4,16 +4,21 @@ import json
 import urllib
 from bson import json_util
 import logging
+import copy
 
 from iottly_core import dbapi
-from iottly_core import messageparser
+import messageparser
 from iottly_core.settings import settings
 
 @gen.coroutine
 def route(msg, send_command):
+    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 1\n\n')
     msg = messageparser.annotate_message(msg)
+    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 2\n\n')
     msgs = messageparser.parse_message(copy.deepcopy(msg))
+    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 3\n\n')
     persist_msgs = filter(messageparser.check_persist, msgs)
+    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 4\n\n')
     
     yield [
         dbapi.insert('message_logs', msg),

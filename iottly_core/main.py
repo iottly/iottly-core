@@ -111,7 +111,7 @@ class GoogleOAuth2LoginHandler(BaseHandler,
         (header, claims, signature) = response['id_token'].split('.')
         return self._jwt_decode(claims)
 
-    @tornado.gen.coroutine
+    @gen.coroutine
     def get(self):
         redirect_uri = self.request.full_url().split('?')[0]
         if self.get_argument('code', False):
@@ -195,65 +195,6 @@ class MessageHandler(BaseHandler):
             'messages': messages
         }, default=json_util.default))
         self.set_header("Content-Type", "application/json")
-
-
-    def set_time(self, msg):
-        brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'timeset', msg['from'])
-
-    def send_firmware_chunks(self, msg):
-        fw = msg.get('fw')
-        if fw is None:
-            returntime
-
-        from_jid = msg.get('from').split('/')[0]
-
-        num_chunks = fw.get('qty', 0)
-        dim_chunk = fw.get('dim', 256)
-        area = fw.get('area', 0)
-        block = fw.get('block', 0)
-        active_file = fw.get('file', None)
-        active_projectid = fw.get('projectid', None)
-
-        if active_file is None or active_file == '':
-            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'Transfer Complete', from_jid, {
-                'fw.area': area,
-                'fw.block': block,
-                'fw.file': active_file,
-            })
-            return
-
-        chunks = flashmanager.get_b64_chunks(active_projectid, active_file, dim_chunk)
-        for i in range(num_chunks):
-            data = chunks[block+i].strip() if block+i < len(chunks) else None
-            values = {
-                'fw.area': area,
-                'fw.block': block + i,
-                'fw.file': active_file,
-            }
-            if data is None:
-                brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'Transfer Complete', from_jid, values)
-                break
-            else:
-                values['fw.data'] = data
-                brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'Send Chunk', from_jid, values)
-
-        progress_msg = {
-            'type': 'progress',
-            'area': area,
-            'to': from_jid,
-            'total_chunks': len(chunks),
-            'chunks_sent': block + num_chunks if data else len(chunks)
-        }
-
-        self._broadcast_interface(progress_msg)
-
-    def _broadcast_interface(self, msg):
-        devices_json = json.dumps({ 'interface': msg }, default=json_util.default)
-        for client in connected_clients:
-            logging.info(client)
-            client.send(devices_json)
-
-
 
 
 class ProjectHandler(BaseHandler):

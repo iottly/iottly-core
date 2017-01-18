@@ -33,7 +33,7 @@ defaults = dict(
     TIME_FMT = "%Y-%m-%dT%H:%M:%S",
 
     # MQTT Client settings
-    IOTTLY_MQTT_SERVER = '192.168.1.185',
+    IOTTLY_MQTT_SERVER = 'mqttbroker',
     IOTTLY_MQTT_PORT = '1883',
     IOTTLY_MQTT_DEVICE_USER = 'iottlycore',
     IOTTLY_MQTT_DEVICE_PASSWORD = 'pippo',
@@ -90,7 +90,7 @@ defaults = dict(
     DEVICEREGISTRATION_SERVICE_PATTERN = '/{}/project/{}/deviceregistration',
 
     #COMMUNICATION_PROTOCOL
-    IOTTLY_IOT_PROTOCOL = 'mqtt',
+    IOTTLY_IOT_PROTOCOL = 'xmpp',
 
     #XMPP:
     PUBLIC_XMPP_HOST='127.0.0.1',

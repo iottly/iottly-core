@@ -48,7 +48,6 @@ from iottly_core.util import module_to_dict, extract_request_dict
 
 from iottly_core import polyglot
 from iottly_core import ibcommands
-from iottly_core.settings import settings
 from iottly_core import messageparser
 from iottly_core import flashmanager
 from iottly_core import permissions
@@ -58,6 +57,7 @@ from iottly_core.dbapi import db
 from iottly_core import dbapi
 from iottly_core import brokerapi
 from iottly_core.settings import settings
+from iottly_core import messagerouter as msgrtr
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -85,7 +85,7 @@ backendbrokerclientconf = {
                                                     }
                             }
 brokers_polyglot=polyglot.Polyglot(backendbrokerclientconf)
-connected_clients = set()
+connected_clients=msgrtr.connected_clients
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -145,11 +145,6 @@ class MessagesConnection(SockJSConnection):
         connected_clients.remove(self)
 
 class MessageHandler(BaseHandler):
-    def initialize(self):
-        self.processing_map = {
-            'TimeReq': self.set_time,
-            'Firmware': self.send_firmware_chunks
-        }
 
     @gen.coroutine
     def post(self, boardid):
@@ -159,20 +154,7 @@ class MessageHandler(BaseHandler):
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-
-        msg = messageparser.annotate_message(msg)
-        msgs = messageparser.parse_message(copy.deepcopy(msg))
-        persist_msgs = filter(messageparser.check_persist, msgs)
-        
-
-        yield [
-            dbapi.insert('message_logs', msg),
-            dbapi.insert('messages', persist_msgs),
-            self._check_and_forward_messages(msgs)
-            ]
-
-        self._broadcast({ 'msgs': msgs })
-        self._process_msgs(msgs)
+        msgrtr.route(msg,brokers_polyglot.send_command)
 
     #@tornado.web.authenticated
     #@permissions.admin_only
@@ -215,45 +197,13 @@ class MessageHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
 
-    def _broadcast(self, msg):
-        events_json = json.dumps({ 'events': msg }, default=json_util.default)
-        for client in connected_clients:
-            logging.info(client)
-            client.send(events_json)
-
-    @gen.coroutine
-    def _check_and_forward_messages(self, msgs):
-        results = yield [self._forward_msg_to_client(m) for m in filter(messageparser.check_message_forward, msgs)]
-
-    @gen.coroutine
-    def _forward_msg_to_client(self, msg):
-        http_client = httpclient.AsyncHTTPClient()
-
-        # Remove mongo ID if found
-        if '_id' in msg:
-            del msg['_id']
-
-        # Serializes datetime to isoformat
-        dthandler = lambda obj: obj.isoformat() if isinstance(obj, datetime) else json.JSONEncoder().default(obj)
-        post_data = {
-            'msg': json.dumps(msg, default=dthandler)
-        }
-        body = urllib.urlencode(post_data)
-        res = None
-        try:
-            res = yield http_client.fetch(settings.CLIENT_CALLBACK_URL, method='POST', body=body)
-        except tornado.httpclient.HTTPError, e:
-            logging.warn('Problem posting to {}: {}'.format(settings.CLIENT_CALLBACK_URL, e))
-
-        raise gen.Return(res)
-
     def set_time(self, msg):
         brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, 'timeset', msg['from'])
 
     def send_firmware_chunks(self, msg):
         fw = msg.get('fw')
         if fw is None:
-            return
+            returntime
 
         from_jid = msg.get('from').split('/')[0]
 
@@ -302,13 +252,6 @@ class MessageHandler(BaseHandler):
         for client in connected_clients:
             logging.info(client)
             client.send(devices_json)
-
-    def _process_msgs(self, msgs):
-        for msg in msgs:
-            fn = self.processing_map.get(msg.get('type', None))
-
-            if fn:
-                fn(msg)
 
 
 
@@ -859,12 +802,12 @@ def shutdown():
     brokers_polyglot.terminate()
 
 if __name__ == "__main__":
-    MessagesRouter = SockJSRouter(MessagesConnection, '/messageChannel')
+    WebSocketRouter = SockJSRouter(MessagesConnection, '/messageChannel')
     app_settings = module_to_dict(settings)
     autoreload.add_reload_hook(shutdown)
 
     application = tornado.web.Application(
-      MessagesRouter.urls +
+      WebSocketRouter.urls +
       [
         (r'/project/?($|[0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),

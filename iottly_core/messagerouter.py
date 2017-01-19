@@ -11,14 +11,10 @@ import messageparser
 from iottly_core.settings import settings
 
 @gen.coroutine
-def route(msg, send_command):
-    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 1\n\n')
+def route(msg, send_command, connected_clients): ### ###
     msg = messageparser.annotate_message(msg)
-    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 2\n\n')
     msgs = messageparser.parse_message(copy.deepcopy(msg))
-    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 3\n\n')
     persist_msgs = filter(messageparser.check_persist, msgs)
-    logging.info('\n\nWITHIN MESSAGE ROUTER -> ROUTE 4\n\n')
     
     yield [
         dbapi.insert('message_logs', msg),
@@ -27,12 +23,11 @@ def route(msg, send_command):
         ]
 
     _broadcast({ 'msgs': msgs })
-    _process_msgs(msgs, send_command)
+    _process_msgs(msgs, send_command, connected_clients) ### ###
 
 @gen.coroutine
 def _check_and_forward_messages(msgs):
     results = yield [_forward_msg_to_client(m) for m in filter(messageparser.check_message_forward, msgs)]
-
 
 @gen.coroutine
 def _forward_msg_to_client(msg):
@@ -62,16 +57,16 @@ def _broadcast(msg):
         logging.info(client)
         client.send(events_json)
 
-def _process_msgs(msgs, send_command):
+def _process_msgs(msgs, send_command, connected_clients): ### ###
     for msg in msgs:
         fn = processing_map.get(msg.get('type', None))
         if fn:
-            fn(msg, send_command)
+            fn(msg, send_command, connected_clients) ### ###
 
-def set_time(msg, send_command):
+def set_time(msg, send_command, connected_clients): ### ###
     send_command(settings.IOTTLY_IOT_PROTOCOL, 'timeset', msg['from'])
 
-def send_firmware_chunks(msg, send_command):
+def send_firmware_chunks(msg, send_command, connected_clients): ### ###
     fw = msg.get('fw')
     if fw is None:
         returntime
@@ -116,15 +111,15 @@ def send_firmware_chunks(msg, send_command):
         'chunks_sent': block + num_chunks if data else len(chunks)
     }
 
-    _broadcast_interface(progress_msg)
+    _broadcast_interface(progress_msg, connected_clients) ### ###
 
-def _broadcast_interface(msg):
+def _broadcast_interface(msg, connected_clients): ### ###
     devices_json = json.dumps({ 'interface': msg }, default=json_util.default)
     for client in connected_clients:
         logging.info(client)
         client.send(devices_json)
 
-connected_clients = set()
+#connected_clients = set()
 processing_map = {
                 'TimeReq': set_time,
                 'Firmware': send_firmware_chunks

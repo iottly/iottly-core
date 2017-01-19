@@ -85,7 +85,8 @@ backendbrokerclientconf = {
                                                     }
                             }
 brokers_polyglot=polyglot.Polyglot(backendbrokerclientconf)
-connected_clients=msgrtr.connected_clients
+#connected_clients=msgrtr.connected_clients
+connected_clients=set() ### ###
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -154,7 +155,7 @@ class MessageHandler(BaseHandler):
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-        msgrtr.route(msg,brokers_polyglot.send_command)
+        msgrtr.route(msg,brokers_polyglot.send_command,connected_clients) ### ###
 
     #@tornado.web.authenticated
     #@permissions.admin_only

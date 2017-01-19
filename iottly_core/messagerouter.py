@@ -7,11 +7,11 @@ import logging
 import copy
 
 from iottly_core import dbapi
-import messageparser
+from iottly_core import messageparser
 from iottly_core.settings import settings
 
 @gen.coroutine
-def route(msg, send_command, connected_clients): ### ###
+def route(msg, send_command, connected_clients):
     msg = messageparser.annotate_message(msg)
     msgs = messageparser.parse_message(copy.deepcopy(msg))
     persist_msgs = filter(messageparser.check_persist, msgs)
@@ -23,7 +23,7 @@ def route(msg, send_command, connected_clients): ### ###
         ]
 
     _broadcast({ 'msgs': msgs })
-    _process_msgs(msgs, send_command, connected_clients) ### ###
+    _process_msgs(msgs, send_command, connected_clients)
 
 @gen.coroutine
 def _check_and_forward_messages(msgs):
@@ -44,6 +44,7 @@ def _forward_msg_to_client(msg):
     }
     body = urllib.urlencode(post_data)
     res = None
+
     try:
         res = yield http_client.fetch(settings.CLIENT_CALLBACK_URL, method='POST', body=body)
     except httpclient.HTTPError, e:
@@ -57,16 +58,16 @@ def _broadcast(msg):
         logging.info(client)
         client.send(events_json)
 
-def _process_msgs(msgs, send_command, connected_clients): ### ###
+def _process_msgs(msgs, send_command, connected_clients):
     for msg in msgs:
         fn = processing_map.get(msg.get('type', None))
         if fn:
-            fn(msg, send_command, connected_clients) ### ###
+            fn(msg, send_command, connected_clients)
 
-def set_time(msg, send_command, connected_clients): ### ###
+def set_time(msg, send_command, connected_clients):
     send_command(settings.IOTTLY_IOT_PROTOCOL, 'timeset', msg['from'])
 
-def send_firmware_chunks(msg, send_command, connected_clients): ### ###
+def send_firmware_chunks(msg, send_command, connected_clients):
     fw = msg.get('fw')
     if fw is None:
         returntime

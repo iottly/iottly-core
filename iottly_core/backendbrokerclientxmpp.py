@@ -32,7 +32,7 @@ class SendMsgBot(sleekxmpp.ClientXMPP):
 
 
 class BackEndBrokerClientXMPP:
-    def __init__(self, conf):
+    def __init__(self, conf, polyglot_send_command): # # #
         self.msg_queue = Queue()
         self.proc=None
         self.init(conf['user'], conf['password'], conf['server'])
@@ -72,7 +72,6 @@ class BackEndBrokerClientXMPP:
         self.msg_queue.put(dict(to=to,msg=msg))
 
     def send_command(self, cmd_name, to, values=None, cmd=None):
-        logging.info('classe XMPP')
         if values is None:
             values = {}
 

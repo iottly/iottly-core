@@ -60,6 +60,7 @@ from iottly_core.settings import settings
 from iottly_core import messagerouter as msgrtr
 
 logging.getLogger().setLevel(logging.DEBUG)
+connected_clients=set() ### ###
 
 backendbrokerclientconf = {
                             'BackendBrokerClientXmpp': {
@@ -80,13 +81,13 @@ backendbrokerclientconf = {
                                                                         'user':settings.IOTTLY_MQTT_DEVICE_USER,
                                                                         'password':settings.IOTTLY_MQTT_DEVICE_PASSWORD,
                                                                         'tpc_sub':settings.IOTTLY_MQTT_TOPIC_SUBSCRIBE,
-                                                                        'tpc_pub':settings.IOTTLY_MQTT_TOPIC_PUBLISH         
+                                                                        'tpc_pub':settings.IOTTLY_MQTT_TOPIC_PUBLISH,
+                                                                        'connected_clients':connected_clients
                                                                         }
                                                     }
                             }
 brokers_polyglot=polyglot.Polyglot(backendbrokerclientconf)
 #connected_clients=msgrtr.connected_clients
-connected_clients=set() ### ###
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -155,7 +156,7 @@ class MessageHandler(BaseHandler):
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-        msgrtr.route(msg,brokers_polyglot.send_command,connected_clients) ### ###
+        msgrtr.route(msg,brokers_polyglot.send_command,connected_clients)
 
     #@tornado.web.authenticated
     #@permissions.admin_only

@@ -29,6 +29,7 @@ class SendMsgBot(sleekxmpp.ClientXMPP):
     def handle_available(self, event):
         logging.info("PRESENCE RECEIVED: %s" % str(event))
         logging.info("PRESENCE RECEIVED FROM: %s" % event["from"])
+        
 
 
 class BackEndBrokerClientXMPP:

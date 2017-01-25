@@ -38,6 +38,7 @@ class BackEndBrokerClientMQTT:
 
     def callback_command(self, msg):
     	msgrtr.route(msg, self.polyglot_send_command, self.connected_clients)
+        
 
     def message_consumer(self, mqtt_server, mqtt_port, mqtt_user, pswd, sub_tpc, pub_tpc, msg_queue, callback_command):
 

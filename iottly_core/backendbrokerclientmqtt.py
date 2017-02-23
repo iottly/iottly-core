@@ -5,10 +5,10 @@ from multiprocessing import Process, Queue
 import logging
 from iottly_core import messagerouter as msgrtr
 
-class RpiIottlyMqttClientServer(mqtt.Client):
-    def __init__(self,cl_id,pswd,on_connect,on_disconnect,callback_command):
-        mqtt.Client.__init__(self,client_id=cl_id, clean_session=True, userdata=None)
-        self.username_pw_set(cl_id, password=pswd)
+class IottlyMqttClient(mqtt.Client):
+    def __init__(self, username, password, on_connect,on_disconnect,callback_command):
+        mqtt.Client.__init__(self,client_id=None, clean_session=True, userdata=None)
+        self.username_pw_set(username, password)
         self.on_connect=on_connect
         self.on_message=self.handle_message
         self.on_disconnect=on_disconnect
@@ -23,23 +23,19 @@ class RpiIottlyMqttClientServer(mqtt.Client):
         self.message_from_broker(messg)
 
 class BackEndBrokerClientMQTT:
-    def __init__(self, conf, polyglot_send_command): # # #
+    def __init__(self, conf, polyglot_send_command, connected_clients):
         self.msg_queue = Queue()
-        self.proc=None
-        self.connected_clients=conf['connected_clients']
-        self.polyglot_send_command=polyglot_send_command
-        self.init(conf['server'],
-                    conf['port'],
-                    conf['user'],
-                    conf['password'],
-                    conf['tpc_sub'],
-                    conf['tpc_pub'],
-                    self.callback_command)
+        self.proc = None
+        self.connected_clients = connected_clients
+        self.polyglot_send_command = polyglot_send_command
+        self.init(conf['SERVER'], conf['PORT'], conf['USER'], conf['PASSWORD'], 
+            conf['TOPIC_EVENTS_PATTERN'], conf['TOPIC_COMMANDS_PATTERN'], 
+            self.callback_command)
 
     def callback_command(self, msg):
     	msgrtr.route(msg, self.polyglot_send_command, self.connected_clients)
 
-    def message_consumer(self, mqtt_server, mqtt_port, mqtt_user, pswd, sub_tpc, pub_tpc, msg_queue, callback_command):
+    def message_consumer(self, mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, msg_queue, callback_command):
 
         def on_connect(client, userdata, flags, connection_status_code):
             logging.info('Connection to message broker STATUS - result code {}'.format(str(connection_status_code)))
@@ -55,8 +51,9 @@ class BackEndBrokerClientMQTT:
                 logging.info('Disconnected by user')
             else:
                 logging.info("lost connection from %s" % str(mqtt_server))
+
         try:
-            mqtt_c = RpiIottlyMqttClientServer(mqtt_user, pswd, on_connect, on_disconnect, callback_command)
+            mqtt_c = IottlyMqttClient(username, password, on_connect, on_disconnect, callback_command)
 
             # Connect to the MQTT broker.
             mqtt_c.connect(mqtt_server,mqtt_port,60)
@@ -79,8 +76,10 @@ class BackEndBrokerClientMQTT:
             logging.info('msg_queue: {}'.format(msg_queue.qsize()))
             logging.exception(e)
 
-    def init(self, mqtt_server, mqtt_port, mqtt_user, mqtt_password, sub_tpc, pub_tpc, callback_command):
-        p = Process(target=self.message_consumer, args=(mqtt_server, mqtt_port, mqtt_user, mqtt_password, sub_tpc, pub_tpc, self.msg_queue, callback_command))
+    def init(self, mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, callback_command):
+        p = Process(target=self.message_consumer, 
+            args=(mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, self.msg_queue, callback_command)
+            )
         p.daemon = True
         p.start()
         self.proc=p

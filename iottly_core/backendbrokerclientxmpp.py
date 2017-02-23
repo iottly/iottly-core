@@ -32,10 +32,11 @@ class SendMsgBot(sleekxmpp.ClientXMPP):
 
 
 class BackEndBrokerClientXMPP:
-    def __init__(self, conf, polyglot_send_command): # # #
+    def __init__(self, conf, polyglot_send_command, connected_clients):
+        self.connected_clients = connected_clients
         self.msg_queue = Queue()
         self.proc=None
-        self.init(conf['user'], conf['password'], conf['server'])
+        self.init(conf['USER'], conf['PASSWORD'], conf['SERVER'])
 
     # This function runs in its own process and dispatches messages in the shared queue
     def message_consumer(self, jid, password, server, q):

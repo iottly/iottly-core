@@ -33,12 +33,12 @@ defaults = dict(
     TIME_FMT = "%Y-%m-%dT%H:%M:%S",
 
     # MQTT Client settings
-    IOTTLY_MQTT_SERVER = 'mqttbroker',
-    IOTTLY_MQTT_PORT = '1883',
-    IOTTLY_MQTT_DEVICE_USER = 'iottlycore',
-    IOTTLY_MQTT_DEVICE_PASSWORD = 'pippo',
-    IOTTLY_MQTT_TOPIC_SUBSCRIBE = 'publish_tpc',
-    IOTTLY_MQTT_TOPIC_PUBLISH = 'subscription_tpc',         
+    IOTTLY_MQTT_SERVER = 'mqttbrokerbridge',
+    IOTTLY_MQTT_PORT = 1883,
+    IOTTLY_MQTT_USER = 'iottlycore',
+    IOTTLY_MQTT_PASSWORD = '',    
+    IOTTLY_MQTT_TOPIC_EVENTS_PATTERN = '/iottly/management/{}/{}/events',
+    IOTTLY_MQTT_TOPIC_COMMANDS_PATTERN = '/iottly/management/{}/{}/commands',         
 
     # XMPP Client settings
     XMPP_HOST = 'xmppbroker',
@@ -158,10 +158,25 @@ cshooks = OrderedDict([
                 settings.BOARDS_TYPE_MAP[k]) 
             for k in settings.BOARDS_TYPE_MAP.keys()
         }),
-
+    ('BACKEND_BROKER_CLIENTS_CONF', lambda settings: {
+            'XMPP': {
+                        'CLASS_NAME': 'BackEndBrokerClientXMPP',
+                        'USER': settings.XMPP_USER,
+                        'PASSWORD': settings.XMPP_PASSWORD,
+                        'SERVER': settings.XMPP_SERVER
+            },
+            'MQTT': {
+                        'CLASS_NAME': 'BackEndBrokerClientMQTT',
+                        'SERVER': settings.IOTTLY_MQTT_SERVER,
+                        'PORT': settings.IOTTLY_MQTT_PORT,
+                        'USER': settings.IOTTLY_MQTT_USER,
+                        'PASSWORD': settings.IOTTLY_MQTT_PASSWORD,
+                        'TOPIC_EVENTS_PATTERN': settings.IOTTLY_MQTT_TOPIC_EVENTS_PATTERN,
+                        'TOPIC_COMMANDS_PATTERN': settings.IOTTLY_MQTT_TOPIC_COMMANDS_PATTERN
+            },            
+        }),
 
 ])
-
 
 settings = prettysettings.Settings(defaults, computed_settings_hooks = cshooks)
 

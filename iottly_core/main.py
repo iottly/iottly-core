@@ -62,31 +62,9 @@ from iottly_core import messagerouter as msgrtr
 logging.getLogger().setLevel(logging.DEBUG)
 connected_clients=set() ### ###
 
-backendbrokerclientconf = {
-                            'BackendBrokerClientXmpp': {
-                                                    'key':'xmpp', 
-                                                    'class_name':'BackEndBrokerClientXMPP',
-                                                    'communicationconf': {
-                                                                        'user':settings.XMPP_USER,
-                                                                        'password':settings.XMPP_PASSWORD,
-                                                                        'server':settings.XMPP_SERVER           
-                                                                        }
-                                                    },
-                            'BackendBrokerClientMqtt': {
-                                                    'key':'mqtt', 
-                                                    'class_name':'BackEndBrokerClientMQTT',
-                                                    'communicationconf': {
-                                                                        'server':settings.IOTTLY_MQTT_SERVER,
-                                                                        'port':settings.IOTTLY_MQTT_PORT,
-                                                                        'user':settings.IOTTLY_MQTT_DEVICE_USER,
-                                                                        'password':settings.IOTTLY_MQTT_DEVICE_PASSWORD,
-                                                                        'tpc_sub':settings.IOTTLY_MQTT_TOPIC_SUBSCRIBE,
-                                                                        'tpc_pub':settings.IOTTLY_MQTT_TOPIC_PUBLISH,
-                                                                        'connected_clients':connected_clients
-                                                                        }
-                                                    }
-                            }
-brokers_polyglot=polyglot.Polyglot(backendbrokerclientconf)
+
+
+brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF, connected_clients = connected_clients)
 #connected_clients=msgrtr.connected_clients
 
 class BaseHandler(tornado.web.RequestHandler):

@@ -44,6 +44,7 @@ class Project(validator.SchemaDictionary):
               "secretsalt": {"type": "string"},
               "board":{"type": "string", "allowed": settings.INSTALLER_FILE_PATHS.keys(), "required": True}, 
               "fwlanguage":{"type": "string", "allowed": ["Python"], "required": True},
+              "iotprotocol":{"type": "string", "allowed": ["XMPP","MQTT"], "required": True},
               "fwextension": {"type": "string"},
               "boards": {
                 "type": "list", 

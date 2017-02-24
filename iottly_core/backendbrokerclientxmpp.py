@@ -1,12 +1,13 @@
-from iottly_core.settings import settings
 
 import sleekxmpp
 import logging
 
 from multiprocessing import Process, Queue
+from tornado import gen
 
 from iottly_core import ibcommands
-from iottly_core.settings import settings
+from iottly_core import brokerapixmpp
+
 
 # Interprocess queue for dispatching xmpp messages
 
@@ -34,9 +35,11 @@ class SendMsgBot(sleekxmpp.ClientXMPP):
 class BackEndBrokerClientXMPP:
     def __init__(self, conf, polyglot_send_command, connected_clients):
         self.connected_clients = connected_clients
+        self.server = conf['SERVER']
+
         self.msg_queue = Queue()
         self.proc=None
-        self.init(conf['USER'], conf['PASSWORD'], conf['SERVER'])
+        self.init(conf['USER'], conf['PASSWORD'], self.server)
 
     # This function runs in its own process and dispatches messages in the shared queue
     def message_consumer(self, jid, password, server, q):
@@ -93,3 +96,16 @@ class BackEndBrokerClientXMPP:
         if cmd is None:
             raise ValueError('Unknown command [{}]'.format(cmd_name))
         send_sms(to, cmd.cmd_msg)
+
+
+    @gen.coroutine
+    def create_user(self, boardid, password):
+
+        apiresult = yield brokerapixmpp.create_user(boardid, password, self.server)
+        raise gen.Return(apiresult)
+
+    @gen.coroutine
+    def delete_user(self, boardid):
+
+        apiresult = yield brokerapixmpp.delete_user(boardid)
+        raise gen.Return(apiresult)

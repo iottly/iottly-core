@@ -55,7 +55,6 @@ from iottly_core import boards
 from iottly_core import projectmanager
 from iottly_core.dbapi import db
 from iottly_core import dbapi
-from iottly_core import brokerapi
 from iottly_core.settings import settings
 from iottly_core import messagerouter as msgrtr
 
@@ -251,7 +250,7 @@ class ProjectHandler(BaseHandler):
             #remove registered boards from broker
             if "boards" in project.value.keys():
                 for board in project.value["boards"]:
-                    apiresult = yield brokerapi.delete_user(board["ID"])
+                    apiresult = yield brokers_polyglot.delete_user(project.value.get('iotprotocol'), board["ID"])
 
             #remove over the air fw repo path:
             fwdir = os.path.join(settings.FIRMWARE_DIR, str(_id))
@@ -332,7 +331,7 @@ class DeviceRegistrationHandler(BaseHandler):
 
                 board = project.add_board(macaddress)
                 
-                apiresult = yield brokerapi.create_user(board["ID"], board["password"], settings.XMPP_USER)
+                apiresult = yield brokers_polyglot.create_user(project.value.get('iotprotocol'), board["ID"], board["password"])
 
                 write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
                 logging.info(write_result)
@@ -388,7 +387,7 @@ class DeviceRegistrationHandler(BaseHandler):
 
             logging.info('remove board: {}'.format(board))
 
-            apiresult = yield brokerapi.delete_user(board["ID"])
+            apiresult = yield brokers_polyglot.delete_user(project.value.get('iotprotocol'), board["ID"])
 
             write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
             logging.info(write_result)

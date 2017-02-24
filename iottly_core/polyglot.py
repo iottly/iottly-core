@@ -1,4 +1,5 @@
 import importlib
+from tornado import gen
 
 class Polyglot:
 
@@ -14,6 +15,18 @@ class Polyglot:
 
     def send_command(self, protocol, cmd_name, to, values=None, cmd=None):
         self.backend_broker_clients[protocol].send_command(cmd_name, to, values, cmd)
+
+    @gen.coroutine
+    def create_user(self, protocol, boardid, password):
+        
+        apiresult = yield self.backend_broker_clients[protocol].create_user(boardid, password)
+        raise gen.Return(apiresult)
+        
+    @gen.coroutine
+    def delete_user(self, protocol, boardid):
+        
+        apiresult = yield self.backend_broker_clients[protocol].delete_user(boardid)
+        raise gen.Return(apiresult)
 
     def terminate(self):
         for k,v in self.backend_broker_clients.items():

@@ -59,9 +59,7 @@ class Project(validator.SchemaDictionary):
                   "schema": {
                     "name": {"type": "string"},
                     "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
-                    "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
-                    "jid": {"type": "string", "regex": "^.+", "required": True}, 
-                    "simnumber": {"type": "string"}
+                    "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True}
                   }, 
                   "required": True                  
                 }
@@ -189,8 +187,6 @@ class Project(validator.SchemaDictionary):
       board = {
         "macaddress": macaddress, 
         "ID": ID, 
-        "jid": "{}@{}".format(ID, settings.XMPP_DOMAIN),
-        "simnumber": "---"
       }
 
     apiresult = yield brokers_polyglot.create_user(self.value.get('iotprotocol'), board["ID"], password)

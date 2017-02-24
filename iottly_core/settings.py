@@ -90,7 +90,7 @@ defaults = dict(
     DEVICEREGISTRATION_SERVICE_PATTERN = '/{}/project/{}/deviceregistration',
 
     #COMMUNICATION_PROTOCOL
-    IOTTLY_IOT_PROTOCOL = 'xmpp',
+    IOTTLY_IOT_PROTOCOL = 'XMPP',
 
     #XMPP:
     PUBLIC_XMPP_HOST='127.0.0.1',
@@ -163,6 +163,7 @@ cshooks = OrderedDict([
                         'CLASS_NAME': 'BackEndBrokerClientXMPP',
                         'PUBLIC_HOST': settings.PUBLIC_XMPP_HOST,
                         'PUBLIC_PORT': settings.PUBLIC_XMPP_PORT,
+                        'DOMAIN': settings.XMPP_DOMAIN,
                         'USER': settings.XMPP_USER,
                         'PASSWORD': settings.XMPP_PASSWORD,
                         'SERVER': settings.XMPP_SERVER

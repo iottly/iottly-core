@@ -331,7 +331,7 @@ class DeviceRegistrationHandler(BaseHandler):
             #always return board ID with new password in case the board has been re-installed but was already registered
 
             device_params = brokers_polyglot.format_device_credentials(
-                project.value.get('iotprotocol'), _id, board["jid"], password, project.value["secretsalt"])
+                project.value.get('iotprotocol'), _id, board["ID"], password, project.value["secretsalt"])
 
             logging.info(device_params)
 
@@ -559,14 +559,12 @@ class DeviceCommandHandler(BaseHandler):
             project = projectmanager.Project(project)
 
             board = project.get_board_by_id(_buuid)
-            to_jid = board['jid']
 
             params = ujson.loads(self.request.body.decode('utf-8'))
-            logging.info(params)
 
             cmd = project.get_command(params['cmd_type'])
 
-            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, cmd.name, to_jid, values=params['values'], cmd=cmd)
+            brokers_polyglot.send_command(project.value.get('iotprotocol'), cmd.name, board['ID'], values=params['values'], cmd=cmd)
 
             self.write(json_encode({
                 'status': 200,

@@ -11,6 +11,7 @@ from iottly_core import brokerapixmpp
 
 # Interprocess queue for dispatching xmpp messages
 
+JID_FORMAT = "{}@{}"
 
 class SendMsgBot(sleekxmpp.ClientXMPP):
     def __init__(self, jid, password):
@@ -36,6 +37,7 @@ class BackEndBrokerClientXMPP:
     def __init__(self, conf, polyglot_send_command, connected_clients):
         self.connected_clients = connected_clients
         self.xmpp_backend_user = conf['USER']
+        self.domain = conf["DOMAIN"]
         self.public_host = conf['PUBLIC_HOST']
         self.public_port = conf['PUBLIC_PORT']
 
@@ -78,6 +80,7 @@ class BackEndBrokerClientXMPP:
         self.msg_queue.put(dict(to=to,msg=msg))
 
     def send_command(self, cmd_name, to, values=None, cmd=None):
+        to_jid = JID_FORMAT.format(to, self.domain)
         if values is None:
             values = {}
 
@@ -91,7 +94,7 @@ class BackEndBrokerClientXMPP:
         if cmd is None:
             raise ValueError('Unknown command [{}]'.format(cmd_name))
         logging.info('cmd: {}'.format(cmd.to_json(**values)))
-        self.send_message(to, cmd.to_json(**values))
+        self.send_message(to_jid, cmd.to_json(**values))
 
     def send_sms_command(self, cmd_name, to):
         cmd = ibcommands.sms_commands_by_name.get(cmd_name)
@@ -115,7 +118,7 @@ class BackEndBrokerClientXMPP:
     def format_device_credentials(self, boardid, password):
         return {
             "IOTTLY_XMPP_DEVICE_PASSWORD": password,
-            "IOTTLY_XMPP_DEVICE_USER": boardid,
+            "IOTTLY_XMPP_DEVICE_USER": JID_FORMAT.format(boardid, self.domain),
             "IOTTLY_XMPP_SERVER_HOST": self.public_host,
             "IOTTLY_XMPP_SERVER_PORT": self.public_port,
             "IOTTLY_XMPP_SERVER_USER": self.xmpp_backend_user

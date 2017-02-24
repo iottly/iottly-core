@@ -161,6 +161,8 @@ cshooks = OrderedDict([
     ('BACKEND_BROKER_CLIENTS_CONF', lambda settings: {
             'XMPP': {
                         'CLASS_NAME': 'BackEndBrokerClientXMPP',
+                        'PUBLIC_HOST': settings.PUBLIC_XMPP_HOST,
+                        'PUBLIC_PORT': settings.PUBLIC_XMPP_PORT,
                         'USER': settings.XMPP_USER,
                         'PASSWORD': settings.XMPP_PASSWORD,
                         'SERVER': settings.XMPP_SERVER

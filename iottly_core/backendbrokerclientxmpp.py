@@ -35,11 +35,13 @@ class SendMsgBot(sleekxmpp.ClientXMPP):
 class BackEndBrokerClientXMPP:
     def __init__(self, conf, polyglot_send_command, connected_clients):
         self.connected_clients = connected_clients
-        self.server = conf['SERVER']
+        self.xmpp_backend_user = conf['USER']
+        self.public_host = conf['PUBLIC_HOST']
+        self.public_port = conf['PUBLIC_PORT']
 
         self.msg_queue = Queue()
         self.proc=None
-        self.init(conf['USER'], conf['PASSWORD'], self.server)
+        self.init(self.xmpp_backend_user, conf['PASSWORD'], conf['SERVER'])
 
     # This function runs in its own process and dispatches messages in the shared queue
     def message_consumer(self, jid, password, server, q):
@@ -101,7 +103,7 @@ class BackEndBrokerClientXMPP:
     @gen.coroutine
     def create_user(self, boardid, password):
 
-        apiresult = yield brokerapixmpp.create_user(boardid, password, self.server)
+        apiresult = yield brokerapixmpp.create_user(boardid, password, self.xmpp_backend_user)
         raise gen.Return(apiresult)
 
     @gen.coroutine
@@ -109,3 +111,13 @@ class BackEndBrokerClientXMPP:
 
         apiresult = yield brokerapixmpp.delete_user(boardid)
         raise gen.Return(apiresult)
+
+    def format_device_credentials(self, boardid, password):
+        return {
+            "IOTTLY_XMPP_DEVICE_PASSWORD": password,
+            "IOTTLY_XMPP_DEVICE_USER": boardid,
+            "IOTTLY_XMPP_SERVER_HOST": self.public_host,
+            "IOTTLY_XMPP_SERVER_PORT": self.public_port,
+            "IOTTLY_XMPP_SERVER_USER": self.xmpp_backend_user
+        }
+

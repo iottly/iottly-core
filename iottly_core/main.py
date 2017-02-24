@@ -52,19 +52,17 @@ from iottly_core import messageparser
 from iottly_core import flashmanager
 from iottly_core import permissions
 from iottly_core import boards
-from iottly_core import projectmanager
 from iottly_core.dbapi import db
 from iottly_core import dbapi
 from iottly_core.settings import settings
 from iottly_core import messagerouter as msgrtr
 
 logging.getLogger().setLevel(logging.DEBUG)
-connected_clients=set() ### ###
 
-
-
+connected_clients=set()
 brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF, connected_clients = connected_clients)
-#connected_clients=msgrtr.connected_clients
+
+from iottly_core import projectmanager
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -315,7 +313,6 @@ class DeviceRegistrationHandler(BaseHandler):
     @gen.coroutine
     def get(self, _id, macaddress):
         try:
-            dispatch_board = {'registration': {'new': False}}
 
             logging.info('device registration request for mac {}'.format(macaddress))
 
@@ -323,40 +320,24 @@ class DeviceRegistrationHandler(BaseHandler):
             project = projectmanager.Project(project)
 
             #get board ID
-            board = project.get_board_by_mac(macaddress)
+            
+            board, password, newreg = yield project.add_or_update_board(macaddress)
 
-            if not board:
-                #create board ID
-                logging.info('New board')
+            dispatch_board = {'registration': {'new': newreg}}
 
-                board = project.add_board(macaddress)
-                
-                apiresult = yield brokers_polyglot.create_user(project.value.get('iotprotocol'), board["ID"], board["password"])
-
+            if newreg:
                 write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
-                logging.info(write_result)
 
-                dispatch_board.update({'registration': {'new': True}})
+            #always return board ID with new password in case the board has been re-installed but was already registered
 
-            logging.info(board)
+            device_params = brokers_polyglot.format_device_credentials(
+                project.value.get('iotprotocol'), _id, board["jid"], password, project.value["secretsalt"])
 
-            #allways return board ID in case the board has been re-installed but was already registered
-            device_params = {
-
-                "IOTTLY_IOT_PROTOCOL":"xmpp",
-                "IOTTLY_XMPP_DEVICE_PASSWORD": board["password"],
-                "IOTTLY_XMPP_DEVICE_USER": board["jid"],
-                "IOTTLY_XMPP_SERVER_HOST": settings.PUBLIC_XMPP_HOST,
-                "IOTTLY_XMPP_SERVER_PORT": settings.PUBLIC_XMPP_PORT,
-                "IOTTLY_XMPP_SERVER_USER": settings.XMPP_USER,
-                "IOTTLY_PROJECT_ID": _id,
-                "IOTTLY_SECRET_SALT": project.value["secretsalt"]
-            }
             logging.info(device_params)
+
             self.write(json.dumps(device_params, default=json_util.default))
             self.set_header("Content-Type", "application/json")
 
-            del board['password']
             dispatch_board['registration'].update({'board': board})
             self._broadcast(dispatch_board)
 
@@ -383,11 +364,9 @@ class DeviceRegistrationHandler(BaseHandler):
             logging.info(project.value)
 
             #delete board ID
-            board = project.remove_board(macaddress)
+            board = yield project.remove_board(macaddress)
 
             logging.info('remove board: {}'.format(board))
-
-            apiresult = yield brokers_polyglot.delete_user(project.value.get('iotprotocol'), board["ID"])
 
             write_result = yield dbapi.update_by_id('projects', _id, {"boards": project.value["boards"]})
             logging.info(write_result)

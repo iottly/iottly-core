@@ -21,11 +21,16 @@ import random
 import logging
 import os
 import subprocess
+from tornado import gen
 
 from iottly_core.settings import settings
 from iottly_core import validator
 from iottly_core import ibcommands
 from iottly_core import fwcodemanager
+from iottly_core import polyglot
+
+brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF)
+
 
 class Project(validator.SchemaDictionary):
   schema = {
@@ -56,7 +61,6 @@ class Project(validator.SchemaDictionary):
                     "macaddress":{"type": "string", "regex": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", "required": True},
                     "ID": {"type": "string", "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "required": True},
                     "jid": {"type": "string", "regex": "^.+", "required": True}, 
-                    "password": {"type": "string"},
                     "simnumber": {"type": "string"}
                   }, 
                   "required": True                  
@@ -164,30 +168,50 @@ class Project(validator.SchemaDictionary):
     return [b for b in self.value['boards'] if b['ID'] == buuid][0]
 
 
-  def add_board(self, macaddress):
+  @gen.coroutine
+  def add_or_update_board(self, macaddress):
     if not "boards" in self.value.keys():
       self.value["boards"] = []
 
-    ID = str(uuid.uuid4())
+    newreg = True
+    board = self.get_board_by_mac(macaddress)
 
-    board = {
-      "macaddress": macaddress, 
-      "ID": ID, 
-      "jid": "{}@{}".format(ID, settings.XMPP_DOMAIN),
-      "password": ''.join(random.choice('0123456789ABCDEF') for i in range(16)),
-      "simnumber": "---"
-    }
-    self.value["boards"].append(board)
+    password = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
+
+    if board:
+      # always reset password in case of already registered board. We don't store passwords!!
+      newreg = False
+      apiresult = yield brokers_polyglot.delete_user(self.value.get('iotprotocol'), board["ID"])
+    else:
+      # generate new set of credentials
+      ID = str(uuid.uuid4())
+
+      board = {
+        "macaddress": macaddress, 
+        "ID": ID, 
+        "jid": "{}@{}".format(ID, settings.XMPP_DOMAIN),
+        "simnumber": "---"
+      }
+
+    apiresult = yield brokers_polyglot.create_user(self.value.get('iotprotocol'), board["ID"], password)
+
+    if newreg:
+      self.value["boards"].append(board)
+
 
     if not self.validate():
       raise Exception(self.validator.errors)
     
-    return board
+    raise gen.Return((board, password, newreg))
 
+  @gen.coroutine
   def remove_board(self, macaddress):
     board = [b for b in self.value['boards'] if b['macaddress'] == macaddress][0]
+
+    apiresult = yield brokers_polyglot.delete_user(self.value.get('iotprotocol'), board["ID"])
+
     self.value['boards'].remove(board) 
-    return board
+    raise gen.Return(board)
 
   def add_message(self, message):
     if not "messages" in self.value.keys():

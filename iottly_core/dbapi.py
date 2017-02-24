@@ -39,10 +39,13 @@ def remove_by_id(collection_name, _id):
 
 
 @gen.coroutine
-def find_one_by_id(collection_name, _id):
-    result = yield db[collection_name].find_one({"_id": ObjectId(_id)})
+def find_one_by_id(collection_name, _id, projectionfields=None):
+    result = yield db[collection_name].find_one({"_id": ObjectId(_id)}, projectionfields)
     raise gen.Return(result)
 
+@gen.coroutine
+def find_scalar_by_id(collection_name, _id, scalarfield):
+    raise gen.Return((yield find_one_by_id(collection_name, _id, {'_id': 0, scalarfield: 1})).get(scalarfield))
 
 @gen.coroutine
 def find_all(collection_name, sort, limit):

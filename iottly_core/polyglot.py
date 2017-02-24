@@ -46,6 +46,12 @@ class Polyglot:
         logging.info(device_params)
         return device_params
 
+    @gen.coroutine
+    def fetch_status(self, protocol, projectid, boardid):
+        status = yield backend_broker_clients[protocol].fetch_status(projectid, boardid)
+
+        raise gen.Return(status)
+
     def terminate(self):
         for k,v in backend_broker_clients.items():
             v.terminate()

@@ -500,54 +500,24 @@ class FileUploadHandler(tornado.web.RequestHandler):
         logging.info("{} rename to {}".format(src_file, dst_file))
 
 
-class PresenceHandler(BaseHandler):
+
+
+class DeviceStatusHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def get(self, boardid):
-        jid = ''
-        if not boardid:
-            #api has two modes (jid in url or jid in argument)
-            jid = self.get_argument('jid', '')
-        else:
-            #get project
-            board = yield dbapi.find_one_array_by_condition('projects', 'boards', {'boards.ID': {'$eq': boardid}})
-            if board:
-                jid = board['jid']
+    def get(self, _id, _buuid):
+        protocol = yield dbapi.find_scalar_by_id('projects', _id, 'iotprotocol')
 
-        http_client = httpclient.AsyncHTTPClient()
-        url = url_concat(settings.PRESENCE_URL, {'jid': jid, 'req_jid':settings.XMPP_USER, 'type': 'text'})
-        logging.info('PRESENCE_URL: %s' % url)
-        res = yield http_client.fetch(url)
-        if res.error:
-            self.write("Error: %s" % response.error)
-        else:
-            self.write(json_encode({
-                'status': 200,
-                'present': True if res.body.strip() == 'null' else False
-            }))
-            self.set_header("Content-Type", "application/json")
+        status = yield brokers_polyglot.fetch_status(protocol, _id, _buuid)
 
-class CommandHandler(BaseHandler):
-    #@tornado.web.authenticated
-    #@permissions.admin_only
-    def post(self):
-        logging.info(self.request.arguments)
-        command_name = self.get_argument('cmd', None)
-        to_jid = self.get_argument('jid', None)
-        values = extract_request_dict(self.request, 'values')
-        logging.info('---' + str(values))
-        try:
-            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, command_name, to_jid, values)
-        except ValueError, e:
-            return self.write({
-                'status': 400,
-                'error': str(e)
-            })
-        self.write(json_encode({
-            'status': 200,
-        }))
+        logging.info('status: {}'.format(status))
+
+        self.write(json.dumps(status, default=json_util.default))
+
         self.set_header("Content-Type", "application/json")
+
+
 
 class DeviceCommandHandler(BaseHandler):
     #@tornado.web.authenticated
@@ -712,15 +682,11 @@ if __name__ == "__main__":
         (r'/project/([0-9a-fA-F]{24})/messagedefinition/?($|.*)', MessageDefinitionHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/command', DeviceCommandHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/flashfw', DeviceFlashHandler),        
-        (r'/file', FileUploadHandler),
-        (r'/command', CommandHandler),
-        (r'/sms', SmsHandler),
+        (r'/project/([0-9a-fA-F]{24})/device/(.*)/status', DeviceStatusHandler),        
         (r'/msg/?(.*)', MessageHandler),
-        (r'/presence/?(.*)', PresenceHandler),
         (r'/auth', GoogleOAuth2LoginHandler),
         (r'/auth/logout', LogoutHandler),
         (r'/', MainHandler),
-        (r'/admin/([0-9a-fA-F]{24})', AdminHandler)
       ], **app_settings)
 
     application.listen(8520)

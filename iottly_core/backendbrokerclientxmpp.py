@@ -40,6 +40,7 @@ class BackEndBrokerClientXMPP:
         self.domain = conf["DOMAIN"]
         self.public_host = conf['PUBLIC_HOST']
         self.public_port = conf['PUBLIC_PORT']
+        self.presence_url = conf['PRESENCE_URL']
 
         self.msg_queue = Queue()
         self.proc=None
@@ -124,3 +125,11 @@ class BackEndBrokerClientXMPP:
             "IOTTLY_XMPP_SERVER_USER": self.xmpp_backend_user
         }
 
+
+    @gen.coroutine
+    def fetch_status(self, projectid, boardid):
+        jid = JID_FORMAT.format(boardid, self.domain)
+
+        status = yield brokerapixmpp.fetch_status(self.presence_url, self.xmpp_backend_user, jid)
+
+        raise gen.Return(status)            

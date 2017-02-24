@@ -166,7 +166,8 @@ cshooks = OrderedDict([
                         'DOMAIN': settings.XMPP_DOMAIN,
                         'USER': settings.XMPP_USER,
                         'PASSWORD': settings.XMPP_PASSWORD,
-                        'SERVER': settings.XMPP_SERVER
+                        'SERVER': settings.XMPP_SERVER,
+                        'PRESENCE_URL': settings.PRESENCE_URL
             },
             'MQTT': {
                         'CLASS_NAME': 'BackEndBrokerClientMQTT',

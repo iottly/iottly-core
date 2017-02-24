@@ -20,6 +20,7 @@ import logging
 
 from bson import json_util
 from tornado import gen, httpclient
+from tornado.httputil import url_concat
 
 from iottly_core.settings import settings
 
@@ -78,3 +79,21 @@ def delete_user(username):
     res = yield http_client.fetch(xmpp_api_url, method="DELETE", headers=HEADERS, body=None)
     if res.error:
         raise Exception("Create user: " + res.error)
+
+
+@gen.coroutine
+def fetch_status(presence_url, xmpp_backend_user, jid):
+
+    http_client = httpclient.AsyncHTTPClient()
+    url = url_concat(presence_url, {'jid': jid, 'req_jid':xmpp_backend_user, 'type': 'text'})
+    res = yield http_client.fetch(url)
+
+    if res.error:
+        raise Exception(res.error)
+
+    status = {
+        'connected': True if res.body.strip() == 'null' else False
+        # more statuses to come ...
+    }
+
+    raise gen.Return(status)            

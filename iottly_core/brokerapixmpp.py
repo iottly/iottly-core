@@ -54,18 +54,19 @@ def create_user(username, password, roster=None):
     else:
 
         if roster:
-            post_data = {
-                "jid": roster,
-                "subscriptionType": "3"
-            }
-            body = json.dumps(post_data, default=json_util.default)
+            for ri in roster:
+                post_data = {
+                    "jid": ri,
+                    "subscriptionType": "3"
+                }
+                body = json.dumps(post_data, default=json_util.default)
 
-            xmpp_api_url = "{}/{}/{}".format(settings.XMPP_MGMT_REST_URL, username, "roster")
-            
-            res = yield http_client.fetch(xmpp_api_url, method='POST', headers=HEADERS, body=body)
+                xmpp_api_url = "{}/{}/{}".format(settings.XMPP_MGMT_REST_URL, username, "roster")
+                
+                res = yield http_client.fetch(xmpp_api_url, method='POST', headers=HEADERS, body=body)
 
-            if res.error:
-                raise Exception("Create roster: " + res.error)
+                if res.error:
+                    raise Exception("Create roster: " + res.error)
 
 
 

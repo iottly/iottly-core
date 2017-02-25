@@ -129,7 +129,7 @@ class Project(validator.SchemaDictionary):
     protocol = self.value.get('iotprotocol')
 
     project_broker_password = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
-    apiresult = yield brokers_polyglot.create_user(protocol, "project-{}".format(_id), project_broker_password)    
+    apiresult = yield brokers_polyglot.create_project_user(protocol, _id, project_broker_password)    
 
     self.value["projecturl"] = settings.PROJECT_URL_TEMPLATE.format(_id)
     self.value["projectgetagenturl"] = settings.GET_AGENT_URL_TEMPLATE.format(_id)
@@ -175,6 +175,8 @@ class Project(validator.SchemaDictionary):
 
   @gen.coroutine
   def add_or_update_board(self, macaddress):
+    projectid = self.value.get('_id')
+
     if not "boards" in self.value.keys():
       self.value["boards"] = []
 
@@ -196,7 +198,7 @@ class Project(validator.SchemaDictionary):
         "ID": ID, 
       }
 
-    apiresult = yield brokers_polyglot.create_user(self.value.get('iotprotocol'), board["ID"], password)
+    apiresult = yield brokers_polyglot.create_user(self.value.get('iotprotocol'), projectid, board["ID"], password)
 
     if newreg:
       self.value["boards"].append(board)

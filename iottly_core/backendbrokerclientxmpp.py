@@ -12,6 +12,7 @@ from iottly_core import brokerapixmpp
 # Interprocess queue for dispatching xmpp messages
 
 JID_FORMAT = "{}@{}"
+PROJECT_JID_FORMAT = "project-{}"
 
 class SendMsgBot(sleekxmpp.ClientXMPP):
     def __init__(self, jid, password):
@@ -107,14 +108,18 @@ class BackEndBrokerClientXMPP:
 
 
     @gen.coroutine
-    def create_user(self, boardid, password):
+    def create_user(self, projectid, boardid, password):
 
-        apiresult = yield brokerapixmpp.create_user(boardid, password, self.xmpp_backend_user)
+        apiresult = yield brokerapixmpp.create_user(boardid, password, [
+            JID_FORMAT.format(PROJECT_JID_FORMAT.format(projectid), self.domain), 
+            self.xmpp_backend_user
+            ])
+
         raise gen.Return(apiresult)
 
     @gen.coroutine
     def create_project_user(self, projectid, password):
-        apiresult = yield brokerapixmpp.create_user(projectid, password)
+        apiresult = yield brokerapixmpp.create_user(PROJECT_JID_FORMAT.format(projectid), password)
         raise gen.Return(apiresult)
 
     @gen.coroutine
@@ -123,13 +128,13 @@ class BackEndBrokerClientXMPP:
         apiresult = yield brokerapixmpp.delete_user(boardid)
         raise gen.Return(apiresult)
 
-    def format_device_credentials(self, boardid, password):
+    def format_device_credentials(self, projectid, boardid, password):
         return {
             "IOTTLY_XMPP_DEVICE_PASSWORD": password,
             "IOTTLY_XMPP_DEVICE_USER": JID_FORMAT.format(boardid, self.domain),
             "IOTTLY_XMPP_SERVER_HOST": self.public_host,
             "IOTTLY_XMPP_SERVER_PORT": self.public_port,
-            "IOTTLY_XMPP_SERVER_USER": self.xmpp_backend_user
+            "IOTTLY_XMPP_SERVER_USER": JID_FORMAT.format(PROJECT_JID_FORMAT.format(projectid), self.domain)
         }
 
 

@@ -127,7 +127,7 @@ class MessageHandler(BaseHandler):
     def post(self, boardid):
         request_args = ('to', 'from', 'msg')
         msg = { k: self.get_argument(k) for k in request_args }
-
+        logging.info(msg)
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()

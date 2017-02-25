@@ -20,9 +20,9 @@ class Polyglot:
         backend_broker_clients[protocol].send_command(cmd_name, to, values, cmd)
 
     @gen.coroutine
-    def create_user(self, protocol, boardid, password):
+    def create_user(self, protocol, projectid, boardid, password):
         
-        apiresult = yield backend_broker_clients[protocol].create_user(boardid, password)
+        apiresult = yield backend_broker_clients[protocol].create_user(projectid, boardid, password)
         raise gen.Return(apiresult)
 
     @gen.coroutine
@@ -47,7 +47,7 @@ class Polyglot:
             "IOTTLY_SECRET_SALT": secretsalt
         }
 
-        device_params.update(backend_broker_clients[protocol].format_device_credentials(boardid, password))
+        device_params.update(backend_broker_clients[protocol].format_device_credentials(projectid, boardid, password))
 
 
         logging.info(device_params)

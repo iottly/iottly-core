@@ -55,7 +55,6 @@ from iottly_core import boards
 from iottly_core.dbapi import db
 from iottly_core import dbapi
 from iottly_core.settings import settings
-from iottly_core import messagerouter as msgrtr
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -63,6 +62,8 @@ connected_clients=set()
 brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF, connected_clients = connected_clients)
 
 from iottly_core import projectmanager
+from iottly_core import messagerouter as msgrtr
+
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -121,17 +122,23 @@ class MessagesConnection(SockJSConnection):
     def on_close(self):
         connected_clients.remove(self)
 
-class MessageHandler(BaseHandler):
+
+
+
+class NewMessageHandler(BaseHandler):
 
     @gen.coroutine
-    def post(self, boardid):
+    def post(self, protocol):
         request_args = ('to', 'from', 'msg')
         msg = { k: self.get_argument(k) for k in request_args }
         logging.info(msg)
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-        msgrtr.route(msg,brokers_polyglot.send_command,connected_clients)
+        msgrtr.route(protocol, msg,brokers_polyglot.send_command,connected_clients)
+
+
+class MessageHistoryHandler(BaseHandler):
 
     #@tornado.web.authenticated
     #@permissions.admin_only
@@ -683,7 +690,8 @@ if __name__ == "__main__":
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/command', DeviceCommandHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/flashfw', DeviceFlashHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/status', DeviceStatusHandler),        
-        (r'/msg/?(.*)', MessageHandler),
+        (r'/project/([0-9a-fA-F]{24})/device/(.*)/msg/', MessageHistoryHandler),
+        (r'/newmsg/(xmpp|mqtt)', NewMessageHandler),
         (r'/auth', GoogleOAuth2LoginHandler),
         (r'/auth/logout', LogoutHandler),
         (r'/', MainHandler),

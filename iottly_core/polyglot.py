@@ -59,6 +59,9 @@ class Polyglot:
 
         raise gen.Return(status)
 
+    def normalize_receiver_sender(self, protocol, msg):
+        return backend_broker_clients[protocol].normalize_receiver_sender(msg)
+
     def terminate(self):
         for k,v in backend_broker_clients.items():
             v.terminate()

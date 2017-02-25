@@ -9,9 +9,15 @@ import copy
 from iottly_core import dbapi
 from iottly_core import messageparser
 from iottly_core.settings import settings
+from iottly_core import polyglot
+
+brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF)
+
 
 @gen.coroutine
-def route(msg, send_command, connected_clients):
+def route(protocol, msg, send_command, connected_clients):
+    msg = brokers_polyglot.normalize_receiver_sender(protocol, msg)
+
     msg = messageparser.annotate_message(msg)
     msgs = messageparser.parse_message(copy.deepcopy(msg))
     persist_msgs = filter(messageparser.check_persist, msgs)

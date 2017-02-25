@@ -4,7 +4,7 @@ import logging
 
 from multiprocessing import Process, Queue
 from tornado import gen
-
+import re
 from iottly_core import ibcommands
 from iottly_core import brokerapixmpp
 
@@ -42,6 +42,11 @@ class BackEndBrokerClientXMPP:
         self.public_host = conf['PUBLIC_HOST']
         self.public_port = conf['PUBLIC_PORT']
         self.presence_url = conf['PRESENCE_URL']
+
+        self.jid_parsers = {
+            'to': re.compile("project-(.*)@{}".format(self.domain)),
+            'from': re.compile("(.*)@{}".format(self.domain))
+            }
 
         self.msg_queue = Queue()
         self.proc=None
@@ -145,3 +150,15 @@ class BackEndBrokerClientXMPP:
         status = yield brokerapixmpp.fetch_status(self.presence_url, self.xmpp_backend_user, jid)
 
         raise gen.Return(status)            
+
+    def normalize_receiver_sender(self, msg):
+        to_jid = msg.get('to')
+        from_jid = msg.get('from')
+
+        self.to_jid_parser.findall(to_jid)[0]
+        self.from_jid_parser.findall(from_jid)[0]
+
+        msg.update({k: self.jid_parsers[k].findall(msg[k])[0] for k in self.jid_parsers.keys})
+
+        return msg
+        

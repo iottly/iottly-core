@@ -48,6 +48,7 @@ class BackEndBrokerClientXMPP:
 
     # This function runs in its own process and dispatches messages in the shared queue
     def message_consumer(self, jid, password, server, q):
+
         xmpp = SendMsgBot(jid, password)
         xmpp.register_plugin('xep_0030') # Service Discovery
         xmpp.register_plugin('xep_0199') # XMPP Ping
@@ -67,6 +68,7 @@ class BackEndBrokerClientXMPP:
                 xmpp.send_msg(msg_obj['to'], msg_obj['msg'])
 
     def init(self, jid, password, server):
+
         p = Process(target=self.message_consumer, args=(jid, password, server, self.msg_queue))
         p.daemon = True
         p.start()
@@ -108,6 +110,11 @@ class BackEndBrokerClientXMPP:
     def create_user(self, boardid, password):
 
         apiresult = yield brokerapixmpp.create_user(boardid, password, self.xmpp_backend_user)
+        raise gen.Return(apiresult)
+
+    @gen.coroutine
+    def create_project_user(self, projectid, password):
+        apiresult = yield brokerapixmpp.create_user(projectid, password)
         raise gen.Return(apiresult)
 
     @gen.coroutine

@@ -123,8 +123,13 @@ class Project(validator.SchemaDictionary):
 
     self.fwcode = fwcodemanager.FwCode(self.value, self.value["board"])
 
+  @gen.coroutine
   def set_project_params(self, commands):
-    _id = self.value["_id"]
+    _id = self.value.get("_id")
+    protocol = self.value.get('iotprotocol')
+
+    project_broker_password = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
+    apiresult = yield brokers_polyglot.create_user(protocol, "project-{}".format(_id), project_broker_password)    
 
     self.value["projecturl"] = settings.PROJECT_URL_TEMPLATE.format(_id)
     self.value["projectgetagenturl"] = settings.GET_AGENT_URL_TEMPLATE.format(_id)
@@ -151,6 +156,8 @@ class Project(validator.SchemaDictionary):
     self.init_messages(commands)
     self.fwcode.createbasesnippets()
     
+    raise gen.Return(True)
+
 
   def get_board_by_mac(self, macaddress):
     board = None

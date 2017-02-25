@@ -24,6 +24,13 @@ class Polyglot:
         
         apiresult = yield backend_broker_clients[protocol].create_user(boardid, password)
         raise gen.Return(apiresult)
+
+    @gen.coroutine
+    def create_project_user(self, protocol, projectid, password):
+        
+        apiresult = yield backend_broker_clients[protocol].create_project_user(projectid, password)
+        raise gen.Return(apiresult)
+
         
     @gen.coroutine
     def delete_user(self, protocol, boardid):

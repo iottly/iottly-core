@@ -48,7 +48,8 @@ defaults = dict(
 
 
     XMPP_DOMAIN = 'xmppbroker.localdev.iottly.org',
-    XMPP_USER = 'iottlycore@xmppbroker.localdev.iottly.org',
+    XMPP_USERNAME='iottlycore',
+    XMPP_USER_PATTERN = '{}@{}',
     XMPP_PASSWORD = 'iottlycore',
 
     PRESENCE_URL = 'http://xmppbroker:9090/plugins/presence/status',
@@ -139,6 +140,7 @@ defaults = dict(
 cshooks = OrderedDict([
     ('TIMEZONE', lambda settings: pytz.timezone(settings.TIMEZONESTR)),
     ('XMPP_SERVER', lambda settings: (settings.XMPP_HOST, settings.XMPP_PORT)),
+    ('XMPP_USER', lambda settings: settings.XMPP_USER_PATTERN.format(settings.XMPP_USERNAME, settings.XMPP_DOMAIN)),
     ('PUBLIC_HOST_PORT', lambda settings: settings.PUBLIC_HOST_PORT_PATTERN.format(settings.PUBLIC_HOST)),
     ('PUBLIC_URL_PREFIX', lambda settings: settings.PUBLIC_URL_PATTERN.format(settings.PUBLIC_HOST_PORT, settings.API_VERSION)),
     ('PROJECT_URL_TEMPLATE', lambda settings: settings.PROJECT_URL_PATTERN.format(settings.PUBLIC_URL_PREFIX, '{}')),

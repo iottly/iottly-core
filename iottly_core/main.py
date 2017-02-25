@@ -131,11 +131,10 @@ class NewMessageHandler(BaseHandler):
     def post(self, protocol):
         request_args = ('to', 'from', 'msg')
         msg = { k: self.get_argument(k) for k in request_args }
-        logging.info(msg)
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-        msgrtr.route(protocol, msg,brokers_polyglot.send_command,connected_clients)
+        msgrtr.route(protocol.upper(), msg, brokers_polyglot.send_command, connected_clients)
 
 
 class MessageHistoryHandler(BaseHandler):

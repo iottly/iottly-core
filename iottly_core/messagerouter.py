@@ -28,7 +28,7 @@ def route(protocol, msg, send_command, connected_clients):
         _check_and_forward_messages(msgs)
         ]
 
-    _broadcast({ 'msgs': msgs })
+    _broadcast({ 'msgs': msgs }, connected_clients)
     _process_msgs(msgs, send_command, connected_clients)
 
 @gen.coroutine
@@ -58,7 +58,7 @@ def _forward_msg_to_client(msg):
 
     raise gen.Return(res)
 
-def _broadcast(msg):
+def _broadcast(msg, connected_clients):
     events_json = json.dumps({ 'events': msg }, default=json_util.default)
     for client in connected_clients:
         logging.info(client)
@@ -126,7 +126,6 @@ def _broadcast_interface(msg, connected_clients): ### ###
         logging.info(client)
         client.send(devices_json)
 
-#connected_clients = set()
 processing_map = {
                 'TimeReq': set_time,
                 'Firmware': send_firmware_chunks

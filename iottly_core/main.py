@@ -142,20 +142,10 @@ class MessageHistoryHandler(BaseHandler):
     #@tornado.web.authenticated
     #@permissions.admin_only
     @gen.coroutine
-    def get(self, boardid):
-        logging.info('msg get')
-        jid = ''
-        if not boardid:
-            jid = self.get_argument('jid')
-        else:
-            board = yield dbapi.find_one_array_by_condition('projects', 'boards', {'boards.ID': {'$eq': boardid}})
-            if board:
-                jid = '{}/IB'.format(board['jid']) #FIXME: /IB is a hack maybe remove it at store time
-
-        logging.info(jid)
+    def get(self, projectid, boardid):
         query_json = self.get_argument('queryJson', None)
         num_messages = int(self.get_argument('numMessages', None) or 10)
-        query_dict = { 'from' : jid }
+        query_dict = { 'to': projectid, 'from' : boardid }
         query = {}
 
         if query_json:
@@ -689,7 +679,7 @@ if __name__ == "__main__":
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/command', DeviceCommandHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/flashfw', DeviceFlashHandler),        
         (r'/project/([0-9a-fA-F]{24})/device/(.*)/status', DeviceStatusHandler),        
-        (r'/project/([0-9a-fA-F]{24})/device/(.*)/msg/', MessageHistoryHandler),
+        (r'/project/([0-9a-fA-F]{24})/device/(.*)/msgs', MessageHistoryHandler),
         (r'/newmsg/(xmpp|mqtt)', NewMessageHandler),
         (r'/auth', GoogleOAuth2LoginHandler),
         (r'/auth/logout', LogoutHandler),

@@ -38,6 +38,13 @@ class Polyglot:
         apiresult = yield backend_broker_clients[protocol].delete_user(boardid)
         raise gen.Return(apiresult)
 
+    @gen.coroutine
+    def delete_project_user(self, protocol, projectid):
+        
+        apiresult = yield backend_broker_clients[protocol].delete_project_user(projectid)
+        raise gen.Return(apiresult)
+
+
     def format_device_credentials(self, protocol, projectid, boardid, password, secretsalt):
 
         device_params = {

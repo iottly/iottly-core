@@ -246,6 +246,9 @@ class ProjectHandler(BaseHandler):
                 for board in project.value["boards"]:
                     apiresult = yield brokers_polyglot.delete_user(project.value.get('iotprotocol'), board["ID"])
 
+            #remove registered project from broker
+            apiresult = yield brokers_polyglot.delete_project_user(project.value.get('iotprotocol'), _id)            
+
             #remove over the air fw repo path:
             fwdir = os.path.join(settings.FIRMWARE_DIR, str(_id))
             if os.path.exists(fwdir):

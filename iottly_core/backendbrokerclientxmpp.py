@@ -133,6 +133,13 @@ class BackEndBrokerClientXMPP:
         apiresult = yield brokerapixmpp.delete_user(boardid)
         raise gen.Return(apiresult)
 
+    @gen.coroutine
+    def delete_project_user(self, projectid):
+        projectusername = PROJECT_JID_FORMAT.format(projectid)
+        apiresult = yield brokerapixmpp.delete_user(projectusername)
+        raise gen.Return(apiresult)
+
+
     def format_device_credentials(self, projectid, boardid, password):
         return {
             "IOTTLY_XMPP_DEVICE_PASSWORD": password,

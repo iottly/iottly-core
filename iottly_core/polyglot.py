@@ -6,14 +6,17 @@ backend_broker_clients={}
 
 class Polyglot:
 
-    def __init__(self,config, connected_clients = None):
-        
+    def __init__(self):
+        pass
+
+    def init(self, config):
         if len(backend_broker_clients.keys()) == 0:
             for k,v in config.items():
                 class_name = v.get('CLASS_NAME')
                 bbc = importlib.import_module(class_name.lower())
                 class_ = getattr(bbc, class_name)
-                instance = class_(v, self.send_command, connected_clients)
+                instance = class_(v, self.send_command)
+                logging.info(instance)
                 backend_broker_clients[k] = instance
 
     def send_command(self, protocol, cmd_name, to, values=None, cmd=None):
@@ -76,3 +79,5 @@ class Polyglot:
     def terminate(self):
         for k,v in backend_broker_clients.items():
             v.terminate()
+
+polyglot = Polyglot()

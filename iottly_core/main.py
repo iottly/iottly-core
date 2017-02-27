@@ -55,14 +55,15 @@ from iottly_core import boards
 from iottly_core.dbapi import db
 from iottly_core import dbapi
 from iottly_core.settings import settings
-
-logging.getLogger().setLevel(logging.DEBUG)
-
-connected_clients=set()
-brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF, connected_clients = connected_clients)
-
 from iottly_core import projectmanager
 from iottly_core import messagerouter as msgrtr
+from iottly_core.polyglot import polyglot as brokers_polyglot
+
+logging.getLogger().setLevel(logging.DEBUG)
+connected_clients=set()
+brokers_polyglot.init(settings.BACKEND_BROKER_CLIENTS_CONF)
+
+
 
 
 class BaseHandler(tornado.web.RequestHandler):

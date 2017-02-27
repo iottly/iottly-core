@@ -27,9 +27,7 @@ from iottly_core.settings import settings
 from iottly_core import validator
 from iottly_core import ibcommands
 from iottly_core import fwcodemanager
-from iottly_core import polyglot
-
-brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF)
+from iottly_core.polyglot import polyglot as brokers_polyglot
 
 
 class Project(validator.SchemaDictionary):

@@ -3,7 +3,6 @@ from iottly_core.settings import settings
 from iottly_core import ibcommands
 from multiprocessing import Process, Queue
 import logging
-from iottly_core import messagerouter as msgrtr
 
 class IottlyMqttClient(mqtt.Client):
     def __init__(self, username, password, on_connect,on_disconnect,callback_command):
@@ -23,17 +22,17 @@ class IottlyMqttClient(mqtt.Client):
         self.message_from_broker(messg)
 
 class BackEndBrokerClientMQTT:
-    def __init__(self, conf, polyglot_send_command, connected_clients):
+    def __init__(self, conf, polyglot_send_command):
         self.msg_queue = Queue()
         self.proc = None
-        self.connected_clients = connected_clients
         self.polyglot_send_command = polyglot_send_command
         self.init(conf['SERVER'], conf['PORT'], conf['USER'], conf['PASSWORD'], 
             conf['TOPIC_EVENTS_PATTERN'], conf['TOPIC_COMMANDS_PATTERN'], 
             self.callback_command)
 
     def callback_command(self, msg):
-    	msgrtr.route(msg, self.polyglot_send_command, self.connected_clients)
+        pass
+    	#msgrtr.route(msg, self.polyglot_send_command, self.connected_clients)
 
     def message_consumer(self, mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, msg_queue, callback_command):
 

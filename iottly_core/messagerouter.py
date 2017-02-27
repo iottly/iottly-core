@@ -11,9 +11,8 @@ from iottly_core import messageparser
 from iottly_core import flashmanager
 
 from iottly_core.settings import settings
-from iottly_core import polyglot
+from iottly_core.polyglot import polyglot as brokers_polyglot
 
-brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF)
 
 
 @gen.coroutine

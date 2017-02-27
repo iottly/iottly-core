@@ -15,7 +15,7 @@ class Polyglot:
                 class_name = v.get('CLASS_NAME')
                 bbc = importlib.import_module(class_name.lower())
                 class_ = getattr(bbc, class_name)
-                instance = class_(v, self.send_command)
+                instance = class_(v)
                 logging.info(instance)
                 backend_broker_clients[k] = instance
 

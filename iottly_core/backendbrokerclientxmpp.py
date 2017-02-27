@@ -35,7 +35,7 @@ class SendMsgBot(sleekxmpp.ClientXMPP):
 
 
 class BackEndBrokerClientXMPP:
-    def __init__(self, conf, polyglot_send_command):
+    def __init__(self, conf):
         self.xmpp_backend_user = conf['USER']
         self.domain = conf["DOMAIN"]
         self.public_host = conf['PUBLIC_HOST']

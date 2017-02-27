@@ -40,6 +40,11 @@ defaults = dict(
     IOTTLY_MQTT_TOPIC_EVENTS_PATTERN = '/iottly/management/{}/{}/events',
     IOTTLY_MQTT_TOPIC_COMMANDS_PATTERN = '/iottly/management/{}/{}/commands',         
 
+    #PUBLIC XMPP:
+    PUBLIC_MQTT_HOST='127.0.0.1',
+    PUBLIC_MQTT_PORT = 1883,
+
+
     # XMPP Client settings
     XMPP_HOST = 'xmppbroker',
     XMPP_PORT = 5222,
@@ -54,6 +59,10 @@ defaults = dict(
 
     PRESENCE_URL = 'http://xmppbroker:9090/plugins/presence/status',
     CLIENT_CALLBACK_URL = 'http://iottlyclientcore:8521/msg',
+
+    #PUBLIC XMPP:
+    PUBLIC_XMPP_HOST='127.0.0.1',
+    PUBLIC_XMPP_PORT = 5222,
 
 
     # Filesystem binaries (FW/NN)
@@ -92,10 +101,6 @@ defaults = dict(
 
     #COMMUNICATION_PROTOCOL
     IOTTLY_IOT_PROTOCOL = 'XMPP',
-
-    #XMPP:
-    PUBLIC_XMPP_HOST='127.0.0.1',
-    PUBLIC_XMPP_PORT = 5222,
 
     #repo for devices' installers
     IOTTLY_REGISTRATION_PROTOCOL = 'https',
@@ -173,10 +178,12 @@ cshooks = OrderedDict([
             },
             'MQTT': {
                         'CLASS_NAME': 'BackEndBrokerClientMQTT',
+                        'PUBLIC_HOST': settings.PUBLIC_MQTT_HOST,
+                        'PUBLIC_PORT': settings.PUBLIC_MQTT_PORT,
                         'SERVER': settings.IOTTLY_MQTT_SERVER,
                         'PORT': settings.IOTTLY_MQTT_PORT,
                         'USER': settings.IOTTLY_MQTT_USER,
-                        'PASSWORD': settings.IOTTLY_MQTT_PASSWORD,
+                        'PASSWORD': settings.IOTTLY_MQTT_PASSWORD,                        
                         'TOPIC_EVENTS_PATTERN': settings.IOTTLY_MQTT_TOPIC_EVENTS_PATTERN,
                         'TOPIC_COMMANDS_PATTERN': settings.IOTTLY_MQTT_TOPIC_COMMANDS_PATTERN
             },            

@@ -1,40 +1,36 @@
 import paho.mqtt.client as mqtt
-from iottly_core.settings import settings
-from iottly_core import ibcommands
-from multiprocessing import Process, Queue
 import logging
 
+from multiprocessing import Process, Queue
+from tornado import gen
+
+from iottly_core import ibcommands
+from iottly_core import brokerapimqtt
+
+
 class IottlyMqttClient(mqtt.Client):
-    def __init__(self, username, password, on_connect,on_disconnect,callback_command):
+    def __init__(self, username, password, on_connect,on_disconnect):
         mqtt.Client.__init__(self,client_id=None, clean_session=True, userdata=None)
         self.username_pw_set(username, password)
         self.on_connect=on_connect
-        self.on_message=self.handle_message
         self.on_disconnect=on_disconnect
-        self.message_from_broker=callback_command
 
-    def handle_message (self, paho_mqtt, userdata, msg):
-    	messg = {
-            'msg': msg.payload.decode('UTF-8'),
-            'to':'iottlycore@xmppbroker.localdev.iottly.org',
-            'from':'d2795606-4ea1-4d75-9551-7f5b83031c31@xmppbroker.localdev.iottly.org'
-        }
-        self.message_from_broker(messg)
 
 class BackEndBrokerClientMQTT:
-    def __init__(self, conf, polyglot_send_command):
+    def __init__(self, conf):
+
+        self.topic_commands_pattern = conf['TOPIC_COMMANDS_PATTERN']
+        self.topic_events_pattern = conf['TOPIC_EVENTS_PATTERN']
+
+        self.public_host = conf['PUBLIC_HOST']
+        self.public_port = conf['PUBLIC_PORT']
+
         self.msg_queue = Queue()
         self.proc = None
-        self.polyglot_send_command = polyglot_send_command
-        self.init(conf['SERVER'], conf['PORT'], conf['USER'], conf['PASSWORD'], 
-            conf['TOPIC_EVENTS_PATTERN'], conf['TOPIC_COMMANDS_PATTERN'], 
-            self.callback_command)
+        self.init(conf['SERVER'], conf['PORT'], conf['USER'], conf['PASSWORD'])
 
-    def callback_command(self, msg):
-        pass
-    	#msgrtr.route(msg, self.polyglot_send_command, self.connected_clients)
 
-    def message_consumer(self, mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, msg_queue, callback_command):
+    def message_consumer(self, mqtt_server, mqtt_port, username, password, msg_queue):
 
         def on_connect(client, userdata, flags, connection_status_code):
             logging.info('Connection to message broker STATUS - result code {}'.format(str(connection_status_code)))
@@ -52,21 +48,18 @@ class BackEndBrokerClientMQTT:
                 logging.info("lost connection from %s" % str(mqtt_server))
 
         try:
-            mqtt_c = IottlyMqttClient(username, password, on_connect, on_disconnect, callback_command)
+            mqtt_c = IottlyMqttClient(username, password, on_connect, on_disconnect)
 
             # Connect to the MQTT broker.
             mqtt_c.connect(mqtt_server,mqtt_port,60)
-            # mqtt_c.subscribe(sub_tpc,2)
-            mqtt_c.loop_start()
 
             while True:
                 msg_obj = msg_queue.get()
                 if msg_obj is None:
                     logging.info("kill received")
-                    mqtt_c.unsubscribe(sub_tpc)
                     mqtt_c.disconnect()
                     break
-                mqtt_c.publish(pub_tpc,msg_obj['msg'],2)
+                mqtt_c.publish(msg_obj['to_topic'],msg_obj['msg'],2)
 
         except ConnectionRefusedError as e:
             logging.info("no connection to %s" % str(mqtt_server))
@@ -75,10 +68,10 @@ class BackEndBrokerClientMQTT:
             logging.info('msg_queue: {}'.format(msg_queue.qsize()))
             logging.exception(e)
 
-    def init(self, mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, callback_command):
+    def init(self, mqtt_server, mqtt_port, username, password):
         p = Process(target=self.message_consumer, 
-            args=(mqtt_server, mqtt_port, username, password, sub_tpc, pub_tpc, self.msg_queue, callback_command)
-            )
+            args=(mqtt_server, mqtt_port, username, password, self.msg_queue))
+
         p.daemon = True
         p.start()
         self.proc=p
@@ -87,10 +80,10 @@ class BackEndBrokerClientMQTT:
         if (self.proc is not None):
             self.proc.terminate()
 
-    def send_message(self, to, msg):
-        self.msg_queue.put(dict(to=to,msg=msg))
+    def send_message(self, to_topic, msg):
+        self.msg_queue.put(dict(to_topic=to_topic,msg=msg))
 
-    def send_command(self, cmd_name, to, values=None, cmd=None):
+    def send_command(self, cmd_name, to_topic, values=None, cmd=None):
         if values is None:
             values = {}
 
@@ -104,10 +97,64 @@ class BackEndBrokerClientMQTT:
         if cmd is None:
             raise ValueError('Unknown command [{}]'.format(cmd_name))
         logging.info('cmd: {}'.format(cmd.to_json(**values)))
-        self.send_message(to, cmd.to_json(**values))
+        self.send_message(to_topic, cmd.to_json(**values))
 
     def send_sms_command(self, cmd_name, to):
         cmd = ibcommands.sms_commands_by_name.get(cmd_name)
         if cmd is None:
             raise ValueError('Unknown command [{}]'.format(cmd_name))
         send_sms(to, cmd.cmd_msg)
+
+
+    @gen.coroutine
+    def create_user(self, projectid, boardid, password):
+
+        apiresult = yield brokerapimqtt.create_user(boardid, password, [
+            JID_FORMAT.format(PROJECT_JID_FORMAT.format(projectid), self.domain), 
+            self.xmpp_backend_user
+            ])
+
+        raise gen.Return(apiresult)
+
+    @gen.coroutine
+    def create_project_user(self, projectid, password):
+        apiresult = yield brokerapixmpp.create_user(PROJECT_JID_FORMAT.format(projectid), password)
+        raise gen.Return(apiresult)
+
+    @gen.coroutine
+    def delete_user(self, boardid):
+
+        apiresult = yield brokerapixmpp.delete_user(boardid)
+        raise gen.Return(apiresult)
+
+    @gen.coroutine
+    def delete_project_user(self, projectid):
+        projectusername = PROJECT_JID_FORMAT.format(projectid)
+        apiresult = yield brokerapixmpp.delete_user(projectusername)
+        raise gen.Return(apiresult)
+
+
+    def format_device_credentials(self, projectid, boardid, password):
+        return {
+            "IOTTLY_XMPP_DEVICE_PASSWORD": password,
+            "IOTTLY_XMPP_DEVICE_USER": JID_FORMAT.format(boardid, self.domain),
+            "IOTTLY_XMPP_SERVER_HOST": self.public_host,
+            "IOTTLY_XMPP_SERVER_PORT": self.public_port,
+            "IOTTLY_XMPP_SERVER_USER": JID_FORMAT.format(PROJECT_JID_FORMAT.format(projectid), self.domain)
+        }
+
+
+    @gen.coroutine
+    def fetch_status(self, projectid, boardid):
+        jid = JID_FORMAT.format(boardid, self.domain)
+
+        status = yield brokerapixmpp.fetch_status(self.presence_url, self.xmpp_backend_user, jid)
+
+        raise gen.Return(status)            
+
+    def normalize_receiver_sender(self, msg):
+
+        msg.update({k: self.jid_parsers[k].findall(msg[k])[0] for k in self.jid_parsers.keys()})
+
+        return msg
+        

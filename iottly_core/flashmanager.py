@@ -85,6 +85,7 @@ def get_b64_chunks(projectpath, filename, size):
         raise IOError("File not found: {}!".format(full_path))
 
     chunks_filename = '{}_{}_{}.b64'.format(projectpath, filename, size)
+
     chunks = file_chunks_cache.get(chunks_filename)
 
     if chunks is None:

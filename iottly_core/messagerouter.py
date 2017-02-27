@@ -8,6 +8,8 @@ import copy
 
 from iottly_core import dbapi
 from iottly_core import messageparser
+from iottly_core import flashmanager
+
 from iottly_core.settings import settings
 from iottly_core import polyglot
 
@@ -15,7 +17,7 @@ brokers_polyglot=polyglot.Polyglot(settings.BACKEND_BROKER_CLIENTS_CONF)
 
 
 @gen.coroutine
-def route(protocol, msg, send_command, connected_clients):
+def route(protocol, msg, connected_clients):
     msg = brokers_polyglot.normalize_receiver_sender(protocol, msg)
 
     msg = messageparser.annotate_message(msg)
@@ -29,7 +31,10 @@ def route(protocol, msg, send_command, connected_clients):
         ]
 
     _broadcast({ 'msgs': msgs }, connected_clients)
-    _process_msgs(msgs, send_command, connected_clients)
+
+    send_command_cb = brokers_polyglot.send_command_cb(protocol)
+    _process_msgs(msgs, send_command_cb, connected_clients)
+
 
 @gen.coroutine
 def _check_and_forward_messages(msgs):
@@ -61,7 +66,6 @@ def _forward_msg_to_client(msg):
 def _broadcast(msg, connected_clients):
     events_json = json.dumps({ 'events': msg }, default=json_util.default)
     for client in connected_clients:
-        logging.info(client)
         client.send(events_json)
 
 def _process_msgs(msgs, send_command, connected_clients):
@@ -71,14 +75,15 @@ def _process_msgs(msgs, send_command, connected_clients):
             fn(msg, send_command, connected_clients)
 
 def set_time(msg, send_command, connected_clients):
-    send_command(settings.IOTTLY_IOT_PROTOCOL, 'timeset', msg['from'])
+    send_command('timeset', msg['from'])
 
 def send_firmware_chunks(msg, send_command, connected_clients):
+
     fw = msg.get('fw')
     if fw is None:
-        returntime
+        return
 
-    from_jid = msg.get('from').split('/')[0]
+    from_id = msg.get('from')
 
     num_chunks = fw.get('qty', 0)
     dim_chunk = fw.get('dim', 256)
@@ -88,7 +93,7 @@ def send_firmware_chunks(msg, send_command, connected_clients):
     active_projectid = fw.get('projectid', None)
 
     if active_file is None or active_file == '':
-        send_command(settings.IOTTLY_IOT_PROTOCOL, 'Transfer Complete', from_jid, {
+        send_command('Transfer Complete', from_id, {
             'fw.area': area,
             'fw.block': block,
             'fw.file': active_file,
@@ -96,6 +101,7 @@ def send_firmware_chunks(msg, send_command, connected_clients):
         return
 
     chunks = flashmanager.get_b64_chunks(active_projectid, active_file, dim_chunk)
+
     for i in range(num_chunks):
         data = chunks[block+i].strip() if block+i < len(chunks) else None
         values = {
@@ -104,23 +110,23 @@ def send_firmware_chunks(msg, send_command, connected_clients):
             'fw.file': active_file,
         }
         if data is None:
-            send_command(settings.IOTTLY_IOT_PROTOCOL, 'Transfer Complete', from_jid, values)
+            send_command('Transfer Complete', from_id, values)
             break
         else:
             values['fw.data'] = data
-            send_command(settings.IOTTLY_IOT_PROTOCOL, 'Send Chunk', from_jid, values)
+            send_command('Send Chunk', from_id, values)
 
     progress_msg = {
         'type': 'progress',
         'area': area,
-        'to': from_jid,
+        'to': from_id,
         'total_chunks': len(chunks),
         'chunks_sent': block + num_chunks if data else len(chunks)
     }
 
-    _broadcast_interface(progress_msg, connected_clients) ### ###
+    _broadcast_interface(progress_msg, connected_clients)
 
-def _broadcast_interface(msg, connected_clients): ### ###
+def _broadcast_interface(msg, connected_clients):
     devices_json = json.dumps({ 'interface': msg }, default=json_util.default)
     for client in connected_clients:
         logging.info(client)

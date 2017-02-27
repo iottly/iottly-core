@@ -19,6 +19,10 @@ class Polyglot:
     def send_command(self, protocol, cmd_name, to, values=None, cmd=None):
         backend_broker_clients[protocol].send_command(cmd_name, to, values, cmd)
 
+    def send_command_cb(self, protocol):
+        return backend_broker_clients[protocol].send_command
+
+
     @gen.coroutine
     def create_user(self, protocol, projectid, boardid, password):
         

@@ -134,7 +134,7 @@ class NewMessageHandler(BaseHandler):
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-        msgrtr.route(protocol.upper(), msg, brokers_polyglot.send_command, connected_clients)
+        msgrtr.route(protocol.upper(), msg, connected_clients)
 
 
 class MessageHistoryHandler(BaseHandler):
@@ -556,9 +556,8 @@ class DeviceFlashHandler(BaseHandler):
         try:
             project = yield dbapi.find_one_by_id("projects", _id)
             project = projectmanager.Project(project)
-
-            board = project.get_board_by_id(_buuid)
-            to_jid = board['jid']
+            
+            protocol = project.value.get('iotprotocol')
 
             params = {} 
             reqbody = self.request.body.decode('utf-8')
@@ -579,7 +578,7 @@ class DeviceFlashHandler(BaseHandler):
             values = {'fw.file': filename, 'fw.md5': md5}
             cmd = ibcommands.commands_by_name[cmd_name]
 
-            brokers_polyglot.send_command(settings.IOTTLY_IOT_PROTOCOL, cmd_name, to_jid, values=values, cmd=cmd)
+            brokers_polyglot.send_command(protocol, cmd_name, _buuid, values=values, cmd=cmd)
 
             self.write(json_encode({
                 'status': 200,

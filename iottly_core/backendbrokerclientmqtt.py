@@ -11,7 +11,8 @@ from iottly_core import brokerapimqtt
 class IottlyMqttClient(mqtt.Client):
     def __init__(self, username, password, on_connect,on_disconnect):
         mqtt.Client.__init__(self,client_id=None, clean_session=True, userdata=None)
-        self.username_pw_set(username, password)
+        if len(username) != 0:
+            self.username_pw_set(username, password)
         self.on_connect=on_connect
         self.on_disconnect=on_disconnect
 
@@ -36,7 +37,6 @@ class BackEndBrokerClientMQTT:
             logging.info('Connection to message broker STATUS - result code {}'.format(str(connection_status_code)))
             if (connection_status_code==mqtt.MQTT_ERR_SUCCESS):
                 logging.info("connected to %s" % str(mqtt_server))
-                mqtt_c.subscribe(sub_tpc,2)
             else:
                 logging.info("connection error to %s" % str(mqtt_server))
 
@@ -51,10 +51,11 @@ class BackEndBrokerClientMQTT:
             mqtt_c = IottlyMqttClient(username, password, on_connect, on_disconnect)
 
             # Connect to the MQTT broker.
-            mqtt_c.connect(mqtt_server,mqtt_port,60)
-
+            mqtt_c.connect(mqtt_server,mqtt_port,5)
+            mqtt_c.loop_start()
             while True:
                 msg_obj = msg_queue.get()
+                logging.info('message_consumer: {}'.format(msg_obj))
                 if msg_obj is None:
                     logging.info("kill received")
                     mqtt_c.disconnect()
@@ -84,11 +85,10 @@ class BackEndBrokerClientMQTT:
         self.msg_queue.put(dict(to_topic=to_topic,msg=msg))
 
     def send_command(self, projectid, cmd_name, to, values=None, cmd=None):
-        logging.info('send_command {} - {} - {} - {}'.format(cmd_name, to, values, cmd))
+        logging.info('send_command - {} - {} - {} - {} - {}'.format(projectid, cmd_name, to, values, cmd))
 
-        # TODO projectid to compute to_topic ...
+        to_topic = self.topic_commands_pattern.format(projectid, to)
 
-        to_topic = self.topic_commands_pattern.format()
         if values is None:
             values = {}
 

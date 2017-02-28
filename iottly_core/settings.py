@@ -35,7 +35,7 @@ defaults = dict(
     # MQTT Client settings
     IOTTLY_MQTT_SERVER = 'mqttbrokerbridge',
     IOTTLY_MQTT_PORT = 1883,
-    IOTTLY_MQTT_USER = 'iottlycore',
+    IOTTLY_MQTT_USER = '',
     IOTTLY_MQTT_PASSWORD = '',    
     IOTTLY_MQTT_TOPIC_EVENTS_PATTERN = '/iottly/management/{}/{}/events',
     IOTTLY_MQTT_TOPIC_COMMANDS_PATTERN = '/iottly/management/{}/{}/commands',         

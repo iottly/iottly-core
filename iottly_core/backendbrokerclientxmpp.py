@@ -87,7 +87,7 @@ class BackEndBrokerClientXMPP:
     def send_message(self, to, msg):
         self.msg_queue.put(dict(to=to,msg=msg))
 
-    def send_command(self, cmd_name, to, values=None, cmd=None):
+    def send_command(self, projectid, cmd_name, to, values=None, cmd=None):
 
         to_jid = JID_FORMAT.format(to, self.domain)
         if values is None:

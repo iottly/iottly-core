@@ -534,7 +534,8 @@ class DeviceCommandHandler(BaseHandler):
 
             cmd = project.get_command(params['cmd_type'])
 
-            brokers_polyglot.send_command(project.value.get('iotprotocol'), cmd.name, board['ID'], values=params['values'], cmd=cmd)
+            send_command_func = brokers_polyglot.send_command_cb(project.value.get('iotprotocol'), _id)
+            send_command_func(cmd_name=cmd.name, to=board['ID'], values=params['values'], cmd=cmd)
 
             self.write(json_encode({
                 'status': 200,
@@ -579,7 +580,8 @@ class DeviceFlashHandler(BaseHandler):
             values = {'fw.file': filename, 'fw.md5': md5}
             cmd = ibcommands.commands_by_name[cmd_name]
 
-            brokers_polyglot.send_command(protocol, cmd_name, _buuid, values=values, cmd=cmd)
+            send_command_func = brokers_polyglot.send_command_cb(project.value.get('iotprotocol'), _id)
+            send_command_func(cmd_name=cmd_name, to=_buuid, values=values, cmd=cmd)
 
             self.write(json_encode({
                 'status': 200,

@@ -1,5 +1,6 @@
 import logging
 import importlib
+from functools import partial
 from tornado import gen
 
 backend_broker_clients={}
@@ -19,12 +20,10 @@ class Polyglot:
                 logging.info(instance)
                 backend_broker_clients[k] = instance
 
-    def send_command(self, protocol, cmd_name, to, values=None, cmd=None):
-        backend_broker_clients[protocol].send_command(cmd_name, to, values, cmd)
+    def send_command_cb(self, protocol, projectid):
+        cb = partial(backend_broker_clients[protocol].send_command, projectid=projectid)
 
-    def send_command_cb(self, protocol):
-        return backend_broker_clients[protocol].send_command
-
+        return cb
 
     @gen.coroutine
     def create_user(self, protocol, projectid, boardid, password):

@@ -31,7 +31,8 @@ def route(protocol, msg, connected_clients):
 
     _broadcast({ 'msgs': msgs }, connected_clients)
 
-    send_command_cb = brokers_polyglot.send_command_cb(protocol)
+    #normalizes msg contains projectid in 'to' field
+    send_command_cb = brokers_polyglot.send_command_cb(protocol, msg.get('to'))
     _process_msgs(msgs, send_command_cb, connected_clients)
 
 
@@ -92,12 +93,13 @@ def send_firmware_chunks(msg, send_command, connected_clients):
     active_projectid = fw.get('projectid', None)
 
     if active_file is None or active_file == '':
-        send_command('Transfer Complete', from_id, {
+        send_command(cmd_name='Transfer Complete', to=from_id, values={
             'fw.area': area,
             'fw.block': block,
             'fw.file': active_file,
         })
         return
+
 
     chunks = flashmanager.get_b64_chunks(active_projectid, active_file, dim_chunk)
 
@@ -109,11 +111,11 @@ def send_firmware_chunks(msg, send_command, connected_clients):
             'fw.file': active_file,
         }
         if data is None:
-            send_command('Transfer Complete', from_id, values)
+            send_command(cmd_name='Transfer Complete', to=from_id, values=values)
             break
         else:
             values['fw.data'] = data
-            send_command('Send Chunk', from_id, values)
+            send_command(cmd_name='Send Chunk', to=from_id, values=values)
 
     progress_msg = {
         'type': 'progress',

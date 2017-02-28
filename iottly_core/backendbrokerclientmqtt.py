@@ -3,18 +3,19 @@ import logging
 
 from multiprocessing import Process, Queue
 from tornado import gen
-
+import re
 from iottly_core import ibcommands
 from iottly_core import brokerapimqtt
 
 
 class IottlyMqttClient(mqtt.Client):
-    def __init__(self, username, password, on_connect,on_disconnect):
+    def __init__(self, username, password, on_connect,on_disconnect,on_publish):
         mqtt.Client.__init__(self,client_id=None, clean_session=True, userdata=None)
         if len(username) != 0:
             self.username_pw_set(username, password)
         self.on_connect=on_connect
         self.on_disconnect=on_disconnect
+        self.on_publish = on_publish
 
 
 class BackEndBrokerClientMQTT:
@@ -25,6 +26,11 @@ class BackEndBrokerClientMQTT:
 
         self.public_host = conf['PUBLIC_HOST']
         self.public_port = conf['PUBLIC_PORT']
+
+        self.topic_parsers = {
+            'to': re.compile(self.topic_events_pattern.format('(.*)','.*')),
+            'from': re.compile(self.topic_events_pattern.format('.*','(.*)'))
+            }
 
         self.msg_queue = Queue()
         self.proc = None
@@ -37,6 +43,7 @@ class BackEndBrokerClientMQTT:
             logging.info('Connection to message broker STATUS - result code {}'.format(str(connection_status_code)))
             if (connection_status_code==mqtt.MQTT_ERR_SUCCESS):
                 logging.info("connected to %s" % str(mqtt_server))
+                client.subscribe('/pluto')
             else:
                 logging.info("connection error to %s" % str(mqtt_server))
 
@@ -47,20 +54,20 @@ class BackEndBrokerClientMQTT:
             else:
                 logging.info("lost connection from %s" % str(mqtt_server))
 
+        def on_publish(mqttc, obj, mid):
+            pass
+
         try:
-            mqtt_c = IottlyMqttClient(username, password, on_connect, on_disconnect)
+            mqtt_c = IottlyMqttClient(username, password, on_connect, on_disconnect, on_publish)
 
             # Connect to the MQTT broker.
-            mqtt_c.connect(mqtt_server,mqtt_port,5)
+            mqtt_c.connect(mqtt_server,mqtt_port,30)
             mqtt_c.loop_start()
             while True:
                 msg_obj = msg_queue.get()
-                logging.info('message_consumer: {}'.format(msg_obj))
-                if msg_obj is None:
-                    logging.info("kill received")
-                    mqtt_c.disconnect()
-                    break
-                mqtt_c.publish(msg_obj['to_topic'],msg_obj['msg'],2)
+
+                topic=msg_obj['to_topic']
+                res = mqtt_c.publish(topic=topic,payload=msg_obj['msg'])
 
         except ConnectionRefusedError as e:
             logging.info("no connection to %s" % str(mqtt_server))
@@ -149,15 +156,14 @@ class BackEndBrokerClientMQTT:
 
     @gen.coroutine
     def fetch_status(self, projectid, boardid):
-        jid = JID_FORMAT.format(boardid, self.domain)
 
-        status = yield brokerapimqtt.fetch_status(self.presence_url, self.xmpp_backend_user, jid)
+        # TODO: fetch status from db
+        pass
 
-        raise gen.Return(status)            
 
     def normalize_receiver_sender(self, msg):
 
-        msg.update({k: self.jid_parsers[k].findall(msg[k])[0] for k in self.jid_parsers.keys()})
+        msg.update({k: self.jid_parsers[k].findall(msg['from'])[0] for k in self.jid_parsers.keys()})
 
         return msg
         

@@ -110,37 +110,35 @@ class BackEndBrokerClientMQTT:
     def create_user(self, projectid, boardid, password):
 
         apiresult = yield brokerapimqtt.create_user(boardid, password, [
-            JID_FORMAT.format(PROJECT_JID_FORMAT.format(projectid), self.domain), 
-            self.xmpp_backend_user
+            self.topic_events_pattern.format(projectid, boardid),
+            self.topic_commands_pattern.format(projectid, boardid),            
             ])
 
         raise gen.Return(apiresult)
 
     @gen.coroutine
     def create_project_user(self, projectid, password):
-        apiresult = yield brokerapixmpp.create_user(PROJECT_JID_FORMAT.format(projectid), password)
-        raise gen.Return(apiresult)
+        pass
 
     @gen.coroutine
     def delete_user(self, boardid):
 
-        apiresult = yield brokerapixmpp.delete_user(boardid)
+        apiresult = yield brokerapimqtt.delete_user(boardid)
         raise gen.Return(apiresult)
 
     @gen.coroutine
     def delete_project_user(self, projectid):
-        projectusername = PROJECT_JID_FORMAT.format(projectid)
-        apiresult = yield brokerapixmpp.delete_user(projectusername)
-        raise gen.Return(apiresult)
-
+        pass
 
     def format_device_credentials(self, projectid, boardid, password):
+
         return {
-            "IOTTLY_XMPP_DEVICE_PASSWORD": password,
-            "IOTTLY_XMPP_DEVICE_USER": JID_FORMAT.format(boardid, self.domain),
-            "IOTTLY_XMPP_SERVER_HOST": self.public_host,
-            "IOTTLY_XMPP_SERVER_PORT": self.public_port,
-            "IOTTLY_XMPP_SERVER_USER": JID_FORMAT.format(PROJECT_JID_FORMAT.format(projectid), self.domain)
+            "IOTTLY_MQTT_SERVER_HOST": self.public_host, 
+            "IOTTLY_MQTT_SERVER_PORT": self.public_port,
+            "IOTTLY_MQTT_DEVICE_USER": boardid, 
+            "IOTTLY_MQTT_DEVICE_PASSWORD": password,
+            "IOTTLY_MQTT_TOPIC_SUBSCRIBE": self.topic_commands_pattern.format(projectid, boardid),
+            "IOTTLY_MQTT_TOPIC_PUBLISH": self.topic_events_pattern.format(projectid, boardid)
         }
 
 
@@ -148,7 +146,7 @@ class BackEndBrokerClientMQTT:
     def fetch_status(self, projectid, boardid):
         jid = JID_FORMAT.format(boardid, self.domain)
 
-        status = yield brokerapixmpp.fetch_status(self.presence_url, self.xmpp_backend_user, jid)
+        status = yield brokerapimqtt.fetch_status(self.presence_url, self.xmpp_backend_user, jid)
 
         raise gen.Return(status)            
 

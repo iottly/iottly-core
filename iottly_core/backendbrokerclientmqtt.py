@@ -83,7 +83,10 @@ class BackEndBrokerClientMQTT:
     def send_message(self, to_topic, msg):
         self.msg_queue.put(dict(to_topic=to_topic,msg=msg))
 
-    def send_command(self, cmd_name, to_topic, values=None, cmd=None):
+    def send_command(self, cmd_name, to, values=None, cmd=None):
+        logging.info('send_command {} - {} - {} - {}'.format(cmd_name, to_topic, values, cmd))
+
+        to_topic = self.topic_commands_pattern.format()
         if values is None:
             values = {}
 

@@ -13,13 +13,12 @@ class Polyglot:
     def init(self, config):
         if len(backend_broker_clients.keys()) == 0:
             for k,v in config.items():
-                if k == 'MQTT':
-                    class_name = v.get('CLASS_NAME')
-                    bbc = importlib.import_module(class_name.lower())
-                    class_ = getattr(bbc, class_name)
-                    instance = class_(v)
-                    logging.info(instance)
-                    backend_broker_clients[k] = instance
+                class_name = v.get('CLASS_NAME')
+                bbc = importlib.import_module(class_name.lower())
+                class_ = getattr(bbc, class_name)
+                instance = class_(v)
+                logging.info(instance)
+                backend_broker_clients[k] = instance
 
     def send_command_cb(self, protocol, projectid):
         cb = partial(backend_broker_clients[protocol].send_command, projectid=projectid)

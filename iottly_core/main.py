@@ -42,7 +42,6 @@ import tornado.web
 import tornado.auth
 from tornado.httputil import url_concat
 from tornado.escape import json_encode
-from sockjs.tornado import SockJSRouter, SockJSConnection
 
 from iottly_core.util import module_to_dict, extract_request_dict
 
@@ -58,13 +57,12 @@ from iottly_core.settings import settings
 from iottly_core import projectmanager
 from iottly_core import messagerouter as msgrtr
 from iottly_core.polyglot import polyglot as brokers_polyglot
+from iottly_core.queuemanager import rabbitclient
 
-logging.getLogger().setLevel(logging.DEBUG)
-connected_clients=set()
+logging.getLogger().setLevel(logging.INFO)
+
+rabbitclient.init()
 brokers_polyglot.init(settings.BACKEND_BROKER_CLIENTS_CONF)
-
-
-
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -116,15 +114,6 @@ class LogoutHandler(BaseHandler):
         self.clear_cookie("user")
         self.redirect(self.get_argument("next", "/"))
 
-class MessagesConnection(SockJSConnection):
-    def on_open(self, info):
-        connected_clients.add(self)
-
-    def on_close(self):
-        connected_clients.remove(self)
-
-
-
 
 class NewMessageHandler(BaseHandler):
 
@@ -135,7 +124,7 @@ class NewMessageHandler(BaseHandler):
         # Immediately return control to the caller
         self.set_status(200)
         self.finish()
-        msgrtr.route(protocol.upper(), msg, connected_clients)
+        msgrtr.route(protocol.upper(), msg)
 
 
 class MessageHistoryHandler(BaseHandler):
@@ -339,7 +328,7 @@ class DeviceRegistrationHandler(BaseHandler):
             self.set_header("Content-Type", "application/json")
 
             dispatch_board['registration'].update({'board': board})
-            self._broadcast(dispatch_board)
+            rabbitclient.publish(_id, 'devices', dispatch_board)
 
         except Exception as e:
 
@@ -349,12 +338,6 @@ class DeviceRegistrationHandler(BaseHandler):
             self.write(json.dumps(error, default=json_util.default))
             self.set_header("Content-Type", "application/json")
             
-
-    def _broadcast(self, msg):
-        devices_json = json.dumps({ 'devices': msg }, default=json_util.default)
-        for client in connected_clients:
-            logging.info(client)
-            client.send(devices_json)
 
     @gen.coroutine
     def delete(self, _id, macaddress):
@@ -668,14 +651,15 @@ class MainHandler(BaseHandler):
 
 def shutdown():
     brokers_polyglot.terminate()
+    rabbitclient.close()
 
 if __name__ == "__main__":
-    WebSocketRouter = SockJSRouter(MessagesConnection, '/messageChannel')
     app_settings = module_to_dict(settings)
     autoreload.add_reload_hook(shutdown)
 
+
+
     application = tornado.web.Application(
-      WebSocketRouter.urls +
       [
         (r'/project/?($|[0-9a-fA-F]{24})', ProjectHandler),
         (r'/project/([0-9a-fA-F]{24})/deviceregistration/(.*)', DeviceRegistrationHandler),
@@ -696,3 +680,5 @@ if __name__ == "__main__":
     logging.info("writing to %s" % settings.MONGO_DB_URL)
 
     tornado.ioloop.IOLoop.instance().start()
+
+    shutdown()

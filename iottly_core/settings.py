@@ -27,6 +27,9 @@ defaults = dict(
     MONGO_DB_URL = 'mongodb://{}:{}/'.format("db", 27017),
     MONGO_DB_NAME = 'iottly',
 
+    RABBITMQ_HOST = 'rabbitmq',
+    QUEUE_NAME = 'websocketqueue',
+
     TIMEZONESTR = pytz.country_timezones['it'][0],
 
     # python iso format stringtom

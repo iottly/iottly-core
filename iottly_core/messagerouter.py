@@ -13,11 +13,13 @@ from iottly_core import flashmanager
 from iottly_core.settings import settings
 from iottly_core.polyglot import polyglot as brokers_polyglot
 
-
+from iottly_core.queuemanager import rabbitclient
 
 @gen.coroutine
-def route(protocol, msg, connected_clients):
+def route(protocol, msg):
     msg = brokers_polyglot.normalize_receiver_sender(protocol, msg)
+
+    to_id = msg.get('to')
 
     msg = messageparser.annotate_message(msg)
     msgs = messageparser.parse_message(copy.deepcopy(msg))
@@ -29,11 +31,11 @@ def route(protocol, msg, connected_clients):
         _check_and_forward_messages(msgs)
         ]
 
-    _broadcast({ 'msgs': msgs }, connected_clients)
+    rabbitclient.publish(to_id, 'events', { 'msgs': msgs })
 
     #normalizes msg contains projectid in 'to' field
     send_command_cb = brokers_polyglot.send_command_cb(protocol, msg.get('to'))
-    _process_msgs(msgs, send_command_cb, connected_clients)
+    _process_msgs(msgs, send_command_cb)
 
 
 @gen.coroutine
@@ -63,27 +65,23 @@ def _forward_msg_to_client(msg):
 
     raise gen.Return(res)
 
-def _broadcast(msg, connected_clients):
-    events_json = json.dumps({ 'events': msg }, default=json_util.default)
-    for client in connected_clients:
-        client.send(events_json)
-
-def _process_msgs(msgs, send_command, connected_clients):
+def _process_msgs(msgs, send_command):
     for msg in msgs:
         fn = processing_map.get(msg.get('type', None))
         if fn:
-            fn(msg, send_command, connected_clients)
+            fn(msg, send_command)
 
-def set_time(msg, send_command, connected_clients):
+def set_time(msg, send_command):
     send_command('timeset', msg['from'])
 
-def send_firmware_chunks(msg, send_command, connected_clients):
+def send_firmware_chunks(msg, send_command):
 
     fw = msg.get('fw')
     if fw is None:
         return
 
     from_id = msg.get('from')
+    to_id = msg.get('to')
 
     num_chunks = fw.get('qty', 0)
     dim_chunk = fw.get('dim', 256)
@@ -125,13 +123,8 @@ def send_firmware_chunks(msg, send_command, connected_clients):
         'chunks_sent': block + num_chunks if data else len(chunks)
     }
 
-    _broadcast_interface(progress_msg, connected_clients)
+    rabbitclient.publish(to_id, 'interface', progress_msg)
 
-def _broadcast_interface(msg, connected_clients):
-    devices_json = json.dumps({ 'interface': msg }, default=json_util.default)
-    for client in connected_clients:
-        logging.info(client)
-        client.send(devices_json)
 
 processing_map = {
                 'TimeReq': set_time,

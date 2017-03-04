@@ -128,6 +128,9 @@ defaults = dict(
       'secret': 'GOOGLE_OAUTH2_CLIENT_SECRET'
     },
 
+    AUTH_TOKEN_CREATE_URL = 'http://iottlyauthentication:8523/projects/token',
+    AUTH_TOKEN_DELETE_URL_PATTERN = 'http://iottlyauthentication:8523/projects/{}/token/{}'
+
 )
 
 # cshooks = {

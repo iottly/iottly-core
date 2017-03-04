@@ -20,8 +20,10 @@ import uuid
 import random
 import logging
 import os
+import json
+
 import subprocess
-from tornado import gen
+from tornado import gen, httpclient
 
 from iottly_core.settings import settings
 from iottly_core import validator
@@ -43,6 +45,15 @@ class Project(validator.SchemaDictionary):
                   "email":{"type": "string", "regex": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", "required": True}
                 }, 
                 "required": True
+              },
+              "apitokens": {
+                "type": "list",
+                "schema": {
+                  "type": "dict",
+                  "schema": {
+                    "token_id": {"type": "string", "required": True}
+                  }
+                }
               },
               "secretsalt": {"type": "string"},
               "board":{"type": "string", "allowed": settings.INSTALLER_FILE_PATHS.keys(), "required": True}, 
@@ -244,22 +255,40 @@ class Project(validator.SchemaDictionary):
     self.fwcode.setMsgSnippetZombie(message)
     return message
 
-"""
-Test:
-{
-  "name": "a", 
-  "user": {
-     "email":"stefano.terna@gmail.com"
-  },
-  "board":"Raspberry Pi", 
-  "fwlanguage":"Python",
-  "boards": [
-    {
-      "name":"a",
-    },    {
-      "name":"b",
-    }
-  ],
-}
 
-"""
+  @gen.coroutine
+  def create_token(self):
+    logging.info('create_token')
+    _id = self.value.get("_id")
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    body = json.dumps({'project': str(_id)})
+
+    http_client = httpclient.AsyncHTTPClient()
+
+    logging.info(settings.AUTH_TOKEN_CREATE_URL)
+    res = yield http_client.fetch(settings.AUTH_TOKEN_CREATE_URL, method='POST', headers=headers, body=body)
+
+    logging.info(res.body)
+
+    if res.error:
+      raise Exception("Create token: " + res.error)
+    else:
+      if not "apitokens" in self.value.keys():
+        self.value["apitokens"] = []
+
+      #token = {
+      #     'project': data['project'],
+      #     'token_id': token_id
+      #}
+
+      token = json.loads(res.body)
+      del token['project']
+      self.value["apitokens"].append(token)
+
+      raise gen.Return(token)
+
+

@@ -5,6 +5,15 @@ import logging
 
 from iottly_core.settings import settings
 
+# TODO: refactor with suggested approach:
+# http://pika.readthedocs.io/en/0.10.0/examples/tornado_consumer.html
+
+# TODO: fix reconnection
+
+# ERROR:pika.adapters.base_connection:Socket Error: 104
+# WARNING:pika.adapters.base_connection:Socket closed when connection was open
+# WARNING:pika.connection:Disconnected from RabbitMQ at rabbitmq:5672 (0): Not specified
+
 
 class RabbitClient():
 	def init(self):
